@@ -14,8 +14,11 @@ import { CustomCalendar } from "../components/CustomCalendar";
 import { DateConfigSheet, DateConfig } from "../components/DateConfigSheet";
 import { applyForLeave } from "../api/leaveApi";
 import { colors } from "../theme/colors";
+import { ChevronLeft } from "lucide-react-native";
+import { useAuth } from "../context/AuthContext";
 
-export default function LeaveApplicationScreen() {
+export default function LeaveApplicationScreen({ navigation }: any) {
+  const { user } = useAuth();
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
   const [selectedDatesMap, setSelectedDatesMap] = useState<
     Record<string, DateConfig>
@@ -45,7 +48,9 @@ export default function LeaveApplicationScreen() {
   const mutation = useMutation({
     mutationFn: applyForLeave,
     onSuccess: () => {
-      Alert.alert("Success", "Leave application submitted successfully.");
+      Alert.alert("Success", "Leave application submitted successfully.", [
+        { text: "OK", onPress: () => navigation.goBack() },
+      ]);
       setSelectedDatesMap({}); // Reset
     },
     onError: (error: any) => {
@@ -85,10 +90,9 @@ export default function LeaveApplicationScreen() {
     }
 
     const payload = {
-      // Mocking the authenticated user UUID for now according to backend payload structure
-      employeeUuid: "550e8400-e29b-41d4-a716-446655440000",
+      employeeId: user?.id,
       leaveDetails: {
-        category: "Mixed",
+        category: "Casual",
         totalDaysRequested,
         paidDaysCount,
         unpaidDaysCount,
@@ -101,9 +105,17 @@ export default function LeaveApplicationScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
+          <ChevronLeft size={28} color={colors.primary} />
+        </TouchableOpacity>
         <Text style={styles.headerTitle}>Apply for Leave</Text>
-
+        <View style={{ width: 40 }} />
+      </View>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Select Dates</Text>
           <Text style={styles.sectionSubtitle}>
@@ -167,16 +179,28 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.neutral.light,
   },
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+  },
+  backButton: {
+    padding: 4,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: colors.primary,
+  },
   scrollContent: {
     padding: 20,
     paddingBottom: 60,
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: colors.primary,
-    marginBottom: 24,
-    marginTop: 12,
   },
   section: {
     marginBottom: 24,
