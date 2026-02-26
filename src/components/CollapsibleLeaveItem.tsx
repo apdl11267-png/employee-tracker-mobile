@@ -204,13 +204,13 @@ export const CollapsibleLeaveItem: React.FC<Props> = ({
 
           <View style={styles.summaryContainer}>
             <View style={styles.summaryBox}>
-              <Text style={styles.summaryLabel}>Paid</Text>
+              <Text style={styles.summaryLabel}>Paid Leave</Text>
               <Text style={styles.summaryValue}>
                 {item.leaveDetails.paidDaysCount}
               </Text>
             </View>
             <View style={styles.summaryBox}>
-              <Text style={styles.summaryLabel}>Unpaid</Text>
+              <Text style={styles.summaryLabel}>Unpaid Leave</Text>
               <Text style={styles.summaryValue}>
                 {item.leaveDetails.unpaidDaysCount}
               </Text>
