@@ -3,10 +3,8 @@ import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
 import { eventBus } from '../utils/eventBus';
 
-// For physical devices, use your machine's IP address.
-// For Android emulator, 10.0.2.2 is the host machine.
-// For iOS simulator, localhost works.
-const DEV_IP = '192.168.1.65:4000'; // The IP used in LoginScreen.tsx
+
+const DEV_IP = '192.168.1.7:4000'; // The IP used in LoginScreen.tsx
 const BASE_URL = Platform.select({
     ios: `http://${DEV_IP}/api/v1`,
     android: `http://${DEV_IP}/api/v1`,

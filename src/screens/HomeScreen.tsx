@@ -136,9 +136,16 @@ export default function HomeScreen({ navigation }: any) {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.adminCard}
+                onPress={() => navigation.navigate("EmployeeList")}
+              >
+                <UserIcon size={24} color={colors.primary} />
+                <Text style={styles.adminCardText}>Manage Employees</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.adminCard}
                 onPress={() => navigation.navigate("CreateEmployee")}
               >
-                <Settings size={24} color={colors.primary} />
+                <Plus size={24} color={colors.primary} />
                 <Text style={styles.adminCardText}>Create Employee</Text>
               </TouchableOpacity>
             </View>
@@ -196,7 +203,7 @@ export default function HomeScreen({ navigation }: any) {
         onPress={() => navigation.navigate("ApplyLeave")}
       >
         <Plus color="#fff" size={24} />
-        <Text style={styles.fabText}>Apply Leave</Text>
+        <Text style={styles.fabText}>Apply Leave/WFH</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );

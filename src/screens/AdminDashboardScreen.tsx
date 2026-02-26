@@ -11,15 +11,8 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getAllLeavesForAdmin, updateLeaveStatus } from "../api/leaveApi";
 import { colors } from "../theme/colors";
-import { AlertService } from "../utils/AlertService";
-import { format, parseISO } from "date-fns";
-import {
-  Check,
-  X,
-  Clock,
-  User as UserIcon,
-  ChevronLeft,
-} from "lucide-react-native";
+import { AlertService } from "../components/AlertService";
+import { Clock, ChevronLeft } from "lucide-react-native";
 import { useAuth } from "../context/AuthContext";
 import { CollapsibleLeaveItem } from "../components/CollapsibleLeaveItem";
 
@@ -45,7 +38,10 @@ export default function AdminDashboardScreen({ navigation }: any) {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["allLeaves"] });
-      AlertService.toast("Status updated successfully.");
+      AlertService.toast({
+        message: "Status updated successfully.",
+        type: "success",
+      });
     },
     onError: (error: any) => {
       AlertService.error(error, "Update failed.");

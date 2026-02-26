@@ -10,7 +10,7 @@ import {
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useMutation } from "@tanstack/react-query";
 import { CustomCalendar } from "../components/CustomCalendar";
-import { AlertService } from "../utils/AlertService";
+import { AlertService } from "../components/AlertService";
 import {
   DateConfigSheet,
   DateConfig,
@@ -37,6 +37,7 @@ export default function LeaveApplicationScreen({ navigation }: any) {
   const [activeDateForConfig, setActiveDateForConfig] = useState<string | null>(
     null,
   );
+  const submitBtnRef = useRef<ScrollView>(null);
 
   // Derive simple array of dates for the calendar
   const selectedDatesArray = useMemo(
@@ -71,22 +72,34 @@ export default function LeaveApplicationScreen({ navigation }: any) {
     },
   });
 
-  const handleDateSelect = (dateIso: string) => {
-    setSelectedDatesMap((prev) => {
-      const newMap = { ...prev };
-      if (newMap[dateIso]) {
-        // If already selected, we just open the sheet to edit or remove
-        // Alternatively, we could toggle it off here, but let's keep it for now
-        // to allow easy access to the config sheet.
-      } else {
-        // If not selected, add IMMEDIATELY with defaults
-        newMap[dateIso] = { ...DEFAULT_CONFIG, dateIso };
-      }
-      return newMap;
-    });
+  // Sync modal visibility with activeDateForConfig
+  React.useEffect(() => {
+    if (activeDateForConfig) {
+      bottomSheetModalRef.current?.present();
+    }
+  }, [activeDateForConfig]);
 
-    setActiveDateForConfig(dateIso);
-    bottomSheetModalRef.current?.present();
+  const handleDateSelect = (dateIso: string) => {
+    const isAlreadySelected = !!selectedDatesMap[dateIso];
+
+    if (isAlreadySelected) {
+      setSelectedDatesMap((prev) => {
+        const clone = { ...prev };
+        delete clone[dateIso];
+        return clone;
+      });
+      setActiveDateForConfig(null);
+    } else {
+      // Add and Show Sheet
+      setSelectedDatesMap((prev) => ({
+        ...prev,
+        [dateIso]: { ...DEFAULT_CONFIG, dateIso },
+      }));
+      setActiveDateForConfig(dateIso);
+      setTimeout(() => {
+        bottomSheetModalRef.current?.present();
+      }, 50);
+    }
   };
 
   const handleSaveDateConfig = (config: DateConfig) => {
@@ -116,7 +129,7 @@ export default function LeaveApplicationScreen({ navigation }: any) {
       employeeId: user?.id,
       requestType,
       leaveDetails: {
-        category: requestType === "wfh" ? "WFH" : "Casual",
+        category: requestType === "wfh" ? "WFH" : "Leave",
         totalDaysRequested,
         paidDaysCount: requestType === "wfh" ? 0 : paidDaysCount,
         unpaidDaysCount: requestType === "wfh" ? 0 : unpaidDaysCount,
@@ -124,6 +137,7 @@ export default function LeaveApplicationScreen({ navigation }: any) {
       },
     };
 
+    console.log({ timeline: payload.leaveDetails.requestedTimeline, payload });
     mutation.mutate(payload);
   };
 
@@ -183,7 +197,10 @@ export default function LeaveApplicationScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        ref={submitBtnRef}
+      >
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Select Dates</Text>
           <Text style={styles.sectionSubtitle}>
@@ -197,7 +214,7 @@ export default function LeaveApplicationScreen({ navigation }: any) {
 
         <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>
-            Summary ({requestType.toUpperCase()})
+            Summary ({requestType?.toUpperCase()})
           </Text>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Total Days</Text>
@@ -234,10 +251,11 @@ export default function LeaveApplicationScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
       </ScrollView>
-
       <DateConfigSheet
         ref={bottomSheetModalRef}
+        submitBtnRef={submitBtnRef}
         selectedDate={activeDateForConfig}
+        requestType={requestType}
         initialConfig={
           activeDateForConfig
             ? selectedDatesMap[activeDateForConfig]

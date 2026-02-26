@@ -32,6 +32,7 @@ interface TimelineItem {
   dayType: string;
   isPaid: boolean;
   status: string;
+  reasonCode: string;
   deductionValue: number;
 }
 
@@ -105,6 +106,10 @@ export const CollapsibleLeaveItem: React.FC<Props> = ({
     return `${start} - ${end}`;
   };
 
+  const formatCategory = (cat: string) => {
+    return cat || "";
+  };
+
   return (
     <View style={styles.card}>
       <TouchableOpacity
@@ -152,7 +157,8 @@ export const CollapsibleLeaveItem: React.FC<Props> = ({
         <View style={styles.infoPill}>
           <Text style={styles.infoLabel}>Type: </Text>
           <Text style={styles.infoValue}>
-            {item.leaveDetails.category || item.requestType}
+            {formatCategory(item.leaveDetails.category) ||
+              item.requestType.toUpperCase()}
           </Text>
         </View>
         <View style={styles.infoPill}>
@@ -171,6 +177,7 @@ export const CollapsibleLeaveItem: React.FC<Props> = ({
           {item.timeline?.map((day, index) => (
             <View key={day._id || index} style={styles.timelineItem}>
               <View style={styles.timelineDate}>
+                <Text style={styles.timelineDateText}>{day.reasonCode}</Text>
                 <Text style={styles.timelineDateText}>
                   {format(parseISO(day.dateIso), "EEE, MMM dd")}
                 </Text>

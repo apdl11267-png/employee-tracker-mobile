@@ -8,6 +8,7 @@ import { AuthProvider } from "./src/context/AuthContext";
 import AppNavigator from "./src/navigation";
 import { colors } from "./src/theme/colors";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import { GlobalToast, toastRef } from "./src/components/AlertService";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ export default function App() {
                   <AppNavigator />
                 </SafeAreaView>
                 <StatusBar style="auto" />
+                <GlobalToast ref={toastRef} />
               </BottomSheetModalProvider>
             </NavigationContainer>
           </AuthProvider>

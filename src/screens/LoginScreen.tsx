@@ -12,7 +12,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { colors } from "../theme/colors";
 import { login } from "../api/authApi";
-import { AlertService } from "../utils/AlertService";
+import { AlertService } from "../components/AlertService";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");

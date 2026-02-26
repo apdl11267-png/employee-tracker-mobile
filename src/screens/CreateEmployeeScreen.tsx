@@ -12,7 +12,7 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import { createEmployee, CreateEmployeePayload } from "../api/authApi";
 import { colors } from "../theme/colors";
-import { AlertService } from "../utils/AlertService";
+import { AlertService } from "../components/AlertService";
 import {
   ChevronLeft,
   UserPlus,
@@ -182,7 +182,7 @@ export default function CreateEmployeeScreen({ navigation }: any) {
           </View>
           <View style={{ width: 16 }} />
           <View style={[styles.inputGroup, { flex: 1 }]}>
-            <Text style={styles.label}>Initial Balance</Text>
+            <Text style={styles.label}>Remaining Leave</Text>
             <View style={styles.inputWrapper}>
               <Calendar size={20} color={colors.neutral.base} />
               <TextInput
