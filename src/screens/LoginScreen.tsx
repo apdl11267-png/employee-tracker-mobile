@@ -8,14 +8,11 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Alert,
 } from "react-native";
 import { useAuth } from "../context/AuthContext";
 import { colors } from "../theme/colors";
-import axios from "axios";
-
-// Assuming API URL, will update apiClient later
-const API_URL = "http://localhost:4000/api/v1";
+import { login } from "../api/authApi";
+import { AlertService } from "../utils/AlertService";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -25,21 +22,21 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert("Error", "Please fill in all fields");
+      AlertService.error({}, "Please fill in all fields");
       return;
     }
 
     setIsLoading(true);
     try {
-      const response = await axios.post(`${API_URL}/auth/login`, {
+      const response = await login({
         email,
         password,
       });
 
-      const { accessToken, refreshToken, employee } = response.data.data;
+      const { accessToken, refreshToken, employee } = response.data;
 
       const userData = {
-        id: employee._id,
+        id: employee.id || employee._id, // Backend returns id in login response (Postman: "id": "699eaede..."), but sometimes it's _id
         email: employee.email,
         displayName: employee.displayName,
         role: employee.role,
@@ -48,10 +45,10 @@ export default function LoginScreen() {
       await signIn(accessToken, refreshToken, userData);
     } catch (error: any) {
       console.error("Login error:", error);
-      const message =
-        error.response?.data?.error ||
-        "Failed to login. Please check your credentials.";
-      Alert.alert("Login Failed", message);
+      AlertService.error(
+        error,
+        "Failed to login. Please check your credentials.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -136,7 +133,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    color: colors.neutral.main,
+    color: colors.neutral.base,
   },
   form: {
     gap: 20,
@@ -147,7 +144,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: "600",
-    color: colors.neutral.main,
+    color: colors.neutral.base,
   },
   input: {
     height: 52,
@@ -181,7 +178,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   forgotPasswordText: {
-    color: colors.neutral.main,
+    color: colors.neutral.base,
     fontSize: 14,
   },
 });

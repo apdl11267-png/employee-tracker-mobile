@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import * as SecureStore from "expo-secure-store";
+import { eventBus } from "../utils/eventBus";
 
 interface User {
   id: string;
@@ -40,6 +41,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     loadStorageData();
   }, []);
 
+  useEffect(() => {
+    const handleUnauthorized = () => {
+      signOut();
+    };
+
+    const handleTokenRefreshed = (data: { token: string }) => {
+      setToken(data.token);
+    };
+
+    eventBus.on("unauthorized", handleUnauthorized);
+    eventBus.on("token_refreshed", handleTokenRefreshed);
+
+    return () => {
+      eventBus.off("unauthorized", handleUnauthorized);
+      eventBus.off("token_refreshed", handleTokenRefreshed);
+    };
+  }, []);
+
   const signIn = async (
     newToken: string,
     refreshToken: string,
@@ -54,12 +73,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const signOut = async () => {
-    await SecureStore.deleteItemAsync("auth_token");
-    await SecureStore.deleteItemAsync("refresh_token");
-    await SecureStore.deleteItemAsync("auth_user");
+    try {
+      const { logout } = await import("../api/authApi");
+      await logout();
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      await SecureStore.deleteItemAsync("auth_token");
+      await SecureStore.deleteItemAsync("refresh_token");
+      await SecureStore.deleteItemAsync("auth_user");
 
-    setToken(null);
-    setUser(null);
+      setToken(null);
+      setUser(null);
+    }
   };
 
   return (

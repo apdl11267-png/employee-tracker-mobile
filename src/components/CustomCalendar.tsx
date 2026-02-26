@@ -120,6 +120,8 @@ const styles = StyleSheet.create({
   daysGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
+    width: "100%", // Explicitly take full width
+    alignItems: "flex-start",
   },
   dayLabel: {
     width: "14.28%",

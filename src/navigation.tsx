@@ -2,13 +2,17 @@ import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useAuth } from "./context/AuthContext";
 import LoginScreen from "./screens/LoginScreen";
+import HomeScreen from "./screens/HomeScreen";
 import LeaveHistoryScreen from "./screens/LeaveHistoryScreen";
 import LeaveApplicationScreen from "./screens/LeaveApplicationScreen";
+import AdminDashboardScreen from "./screens/AdminDashboardScreen";
+import CreateEmployeeScreen from "./screens/CreateEmployeeScreen";
 
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
   const { user, loading } = useAuth();
+  const isAdmin = user?.role === "ADMIN" || user?.role === "HR_ADMIN";
 
   if (loading) return null;
 
@@ -21,8 +25,22 @@ export default function AppNavigator() {
     >
       {user ? (
         <>
+          <Stack.Screen name="Home" component={HomeScreen} />
           <Stack.Screen name="LeaveHistory" component={LeaveHistoryScreen} />
           <Stack.Screen name="ApplyLeave" component={LeaveApplicationScreen} />
+
+          {isAdmin && (
+            <>
+              <Stack.Screen
+                name="AdminDashboard"
+                component={AdminDashboardScreen}
+              />
+              <Stack.Screen
+                name="CreateEmployee"
+                component={CreateEmployeeScreen}
+              />
+            </>
+          )}
         </>
       ) : (
         <Stack.Screen name="Login" component={LoginScreen} />

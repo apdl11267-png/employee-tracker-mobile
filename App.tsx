@@ -7,6 +7,7 @@ import { NavigationContainer } from "@react-navigation/native";
 import { AuthProvider } from "./src/context/AuthContext";
 import AppNavigator from "./src/navigation";
 import { colors } from "./src/theme/colors";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 const queryClient = new QueryClient();
 
@@ -14,14 +15,18 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <NavigationContainer>
-            <BottomSheetModalProvider>
-              <AppNavigator />
-              <StatusBar style="auto" />
-            </BottomSheetModalProvider>
-          </NavigationContainer>
-        </AuthProvider>
+        <SafeAreaProvider>
+          <AuthProvider>
+            <NavigationContainer>
+              <BottomSheetModalProvider>
+                <SafeAreaView style={styles.container}>
+                  <AppNavigator />
+                </SafeAreaView>
+                <StatusBar style="auto" />
+              </BottomSheetModalProvider>
+            </NavigationContainer>
+          </AuthProvider>
+        </SafeAreaProvider>
       </QueryClientProvider>
     </GestureHandlerRootView>
   );

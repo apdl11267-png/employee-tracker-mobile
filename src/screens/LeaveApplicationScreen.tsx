@@ -5,21 +5,32 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
   ActivityIndicator,
 } from "react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
 import { useMutation } from "@tanstack/react-query";
 import { CustomCalendar } from "../components/CustomCalendar";
-import { DateConfigSheet, DateConfig } from "../components/DateConfigSheet";
+import { AlertService } from "../utils/AlertService";
+import {
+  DateConfigSheet,
+  DateConfig,
+  DEFAULT_CONFIG,
+} from "../components/DateConfigSheet";
 import { applyForLeave } from "../api/leaveApi";
 import { colors } from "../theme/colors";
-import { ChevronLeft } from "lucide-react-native";
+import {
+  ChevronLeft,
+  Home,
+  Calendar as CalendarIcon,
+} from "lucide-react-native";
 import { useAuth } from "../context/AuthContext";
+
+type RequestType = "leave" | "wfh";
 
 export default function LeaveApplicationScreen({ navigation }: any) {
   const { user } = useAuth();
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+  const [requestType, setRequestType] = useState<RequestType>("leave");
   const [selectedDatesMap, setSelectedDatesMap] = useState<
     Record<string, DateConfig>
   >({});
@@ -48,20 +59,32 @@ export default function LeaveApplicationScreen({ navigation }: any) {
   const mutation = useMutation({
     mutationFn: applyForLeave,
     onSuccess: () => {
-      Alert.alert("Success", "Leave application submitted successfully.", [
-        { text: "OK", onPress: () => navigation.goBack() },
-      ]);
+      AlertService.success(
+        "Success",
+        `${requestType === "wfh" ? "WFH" : "Leave"} application submitted successfully.`,
+      );
+      navigation.goBack();
       setSelectedDatesMap({}); // Reset
     },
     onError: (error: any) => {
-      Alert.alert(
-        "Error",
-        error.response?.data?.error || "Failed to submit application.",
-      );
+      AlertService.error(error, "Failed to submit application.");
     },
   });
 
   const handleDateSelect = (dateIso: string) => {
+    setSelectedDatesMap((prev) => {
+      const newMap = { ...prev };
+      if (newMap[dateIso]) {
+        // If already selected, we just open the sheet to edit or remove
+        // Alternatively, we could toggle it off here, but let's keep it for now
+        // to allow easy access to the config sheet.
+      } else {
+        // If not selected, add IMMEDIATELY with defaults
+        newMap[dateIso] = { ...DEFAULT_CONFIG, dateIso };
+      }
+      return newMap;
+    });
+
     setActiveDateForConfig(dateIso);
     bottomSheetModalRef.current?.present();
   };
@@ -85,17 +108,18 @@ export default function LeaveApplicationScreen({ navigation }: any) {
 
   const handleSubmit = () => {
     if (selectedDatesArray.length === 0) {
-      Alert.alert("Notice", "Please select at least one date.");
+      AlertService.error({}, "Please select at least one date.", "Notice");
       return;
     }
 
     const payload = {
       employeeId: user?.id,
+      requestType,
       leaveDetails: {
-        category: "Casual",
+        category: requestType === "wfh" ? "WFH" : "Casual",
         totalDaysRequested,
-        paidDaysCount,
-        unpaidDaysCount,
+        paidDaysCount: requestType === "wfh" ? 0 : paidDaysCount,
+        unpaidDaysCount: requestType === "wfh" ? 0 : unpaidDaysCount,
         requestedTimeline: Object.values(selectedDatesMap),
       },
     };
@@ -112,9 +136,53 @@ export default function LeaveApplicationScreen({ navigation }: any) {
         >
           <ChevronLeft size={28} color={colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Apply for Leave</Text>
+        <Text style={styles.headerTitle}>New Request</Text>
         <View style={{ width: 40 }} />
       </View>
+
+      <View style={styles.typeSelector}>
+        <TouchableOpacity
+          style={[
+            styles.typeButton,
+            requestType === "leave" && styles.typeButtonActive,
+          ]}
+          onPress={() => setRequestType("leave")}
+        >
+          <CalendarIcon
+            size={20}
+            color={requestType === "leave" ? "#fff" : colors.primary}
+          />
+          <Text
+            style={[
+              styles.typeButtonText,
+              requestType === "leave" && styles.typeButtonTextActive,
+            ]}
+          >
+            Leave
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.typeButton,
+            requestType === "wfh" && styles.typeButtonActive,
+          ]}
+          onPress={() => setRequestType("wfh")}
+        >
+          <Home
+            size={20}
+            color={requestType === "wfh" ? "#fff" : colors.primary}
+          />
+          <Text
+            style={[
+              styles.typeButtonText,
+              requestType === "wfh" && styles.typeButtonTextActive,
+            ]}
+          >
+            WFH
+          </Text>
+        </TouchableOpacity>
+      </View>
+
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Select Dates</Text>
@@ -128,19 +196,25 @@ export default function LeaveApplicationScreen({ navigation }: any) {
         </View>
 
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryTitle}>Summary</Text>
+          <Text style={styles.summaryTitle}>
+            Summary ({requestType.toUpperCase()})
+          </Text>
           <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Total Days Requested</Text>
+            <Text style={styles.summaryLabel}>Total Days</Text>
             <Text style={styles.summaryValue}>{totalDaysRequested}</Text>
           </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Paid Days</Text>
-            <Text style={styles.summaryValue}>{paidDaysCount}</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Unpaid Days</Text>
-            <Text style={styles.summaryValue}>{unpaidDaysCount}</Text>
-          </View>
+          {requestType === "leave" && (
+            <>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Paid Days</Text>
+                <Text style={styles.summaryValue}>{paidDaysCount}</Text>
+              </View>
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>Unpaid Days</Text>
+                <Text style={styles.summaryValue}>{unpaidDaysCount}</Text>
+              </View>
+            </>
+          )}
 
           <TouchableOpacity
             style={[
@@ -153,7 +227,9 @@ export default function LeaveApplicationScreen({ navigation }: any) {
             {mutation.isPending ? (
               <ActivityIndicator color={colors.text.inverse} />
             ) : (
-              <Text style={styles.submitButtonText}>Submit Application</Text>
+              <Text style={styles.submitButtonText}>
+                Submit {requestType === "wfh" ? "WFH" : "Leave"}
+              </Text>
             )}
           </TouchableOpacity>
         </View>
@@ -197,6 +273,34 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "800",
     color: colors.primary,
+  },
+  typeSelector: {
+    flexDirection: "row",
+    padding: 16,
+    gap: 12,
+    backgroundColor: "#fff",
+  },
+  typeButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: "#fff",
+  },
+  typeButtonActive: {
+    backgroundColor: colors.primary,
+  },
+  typeButtonText: {
+    fontWeight: "700",
+    color: colors.primary,
+  },
+  typeButtonTextActive: {
+    color: "#fff",
   },
   scrollContent: {
     padding: 20,

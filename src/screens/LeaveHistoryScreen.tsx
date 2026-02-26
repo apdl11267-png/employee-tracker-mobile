@@ -53,10 +53,10 @@ export default function LeaveHistoryScreen({ navigation }: any) {
   const { signOut } = useAuth();
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ["myLeaves"],
-    queryFn: getMyLeaves,
+    queryFn: () => getMyLeaves(),
   });
 
-  const leaveApplications = data?.data || [];
+  const leaveApplications = data?.data?.leaveDetails || [];
 
   const renderItem = ({ item }: { item: any }) => (
     <TouchableOpacity
@@ -75,18 +75,21 @@ export default function LeaveHistoryScreen({ navigation }: any) {
           </Text>
         </View>
         <Text style={styles.dateText}>
-          Applied on {format(parseISO(item.createdAt), "MMM dd, yyyy")}
+          Applied {format(parseISO(item.createdAt), "MMM dd")}
         </Text>
       </View>
 
       <View style={styles.cardBody}>
         <View style={styles.detailsContainer}>
-          <Text style={styles.categoryTitle}>{item.leaveDetails.category}</Text>
+          <Text style={styles.categoryTitle}>
+            {item.requestType.toUpperCase()}
+          </Text>
           <Text style={styles.daysText}>
-            {item.leaveDetails.totalDaysRequested} Day(s)
+            {format(parseISO(item.dateIso), "MMM dd, yyyy")}
             <Text style={styles.daysSubtext}>
-              • {item.leaveDetails.paidDaysCount} Paid,{" "}
-              {item.leaveDetails.unpaidDaysCount} Unpaid
+              {" "}
+              • {item.dayType === "full" ? "Full Day" : "Half Day"} •{" "}
+              {item.isPaid ? "Paid" : "Unpaid"}
             </Text>
           </Text>
         </View>

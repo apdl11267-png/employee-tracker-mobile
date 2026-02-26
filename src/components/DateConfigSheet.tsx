@@ -31,7 +31,7 @@ interface DateConfigSheetProps {
   initialConfig?: DateConfig;
 }
 
-const DEFAULT_CONFIG: Omit<DateConfig, "dateIso"> = {
+export const DEFAULT_CONFIG: Omit<DateConfig, "dateIso"> = {
   dayType: "full",
   deductionValue: 1.0,
   isPaid: true,
@@ -51,6 +51,7 @@ export const DateConfigSheet = forwardRef<
 
   // Sync when bottom sheet opens/changes date
   useEffect(() => {
+    console.log({ selectedDate, initialConfig });
     if (initialConfig) {
       setConfig({
         dayType: initialConfig.dayType,
