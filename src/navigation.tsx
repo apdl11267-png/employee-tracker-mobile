@@ -9,6 +9,7 @@ import AdminDashboardScreen from "./screens/AdminDashboardScreen";
 import CreateEmployeeScreen from "./screens/CreateEmployeeScreen";
 import EmployeeListScreen from "./screens/EmployeeListScreen";
 import EditEmployeeScreen from "./screens/EditEmployeeScreen";
+import EmployeeDetailsScreen from "./screens/EmployeeDetailsScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -48,6 +49,10 @@ export default function AppNavigator() {
               <Stack.Screen
                 name="EditEmployee"
                 component={EditEmployeeScreen}
+              />
+              <Stack.Screen
+                name="EmployeeDetails"
+                component={EmployeeDetailsScreen}
               />
             </>
           )}

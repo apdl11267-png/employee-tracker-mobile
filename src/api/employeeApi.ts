@@ -33,4 +33,9 @@ export const employeeApi = {
         const response = await apiClient.patch(`/auth/update-employee/${id}`, data);
         return response.data.data;
     },
+
+    getEmployeeLeaves: async (id: string): Promise<any> => {
+        const response = await apiClient.get(`/leaves/employee/${id}`);
+        return response.data;
+    },
 };

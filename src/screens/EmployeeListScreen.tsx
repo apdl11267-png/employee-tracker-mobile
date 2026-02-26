@@ -40,7 +40,10 @@ export default function EmployeeListScreen({ navigation }: any) {
   );
 
   const renderItem = ({ item }: { item: EmployeeData }) => (
-    <View style={styles.employeeCard}>
+    <TouchableOpacity
+      style={styles.employeeCard}
+      onPress={() => navigation.navigate("EmployeeDetails", { employee: item })}
+    >
       <View style={styles.cardHeader}>
         <View style={styles.userInfo}>
           <View style={styles.userIcon}>
@@ -81,7 +84,7 @@ export default function EmployeeListScreen({ navigation }: any) {
           </View>
         </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
