@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   View,
   Text,
@@ -68,6 +68,7 @@ export default function EditEmployeeScreen({ route, navigation }: any) {
     remainingLeave: employee.remainingLeave.toString(),
     password: "",
   });
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const mutation = useMutation({
     mutationFn: (data: UpdateEmployeePayload) =>
@@ -121,7 +122,6 @@ export default function EditEmployeeScreen({ route, navigation }: any) {
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
       >
         <View style={styles.header}>
           <TouchableOpacity
@@ -139,12 +139,20 @@ export default function EditEmployeeScreen({ route, navigation }: any) {
             {mutation.isPending ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Save size={24} color="#fff" />
+              <View>
+                <Save size={24} color="#fff" />
+                <Text style={{ color: "#fff", fontSize: 10 }}> Save </Text>
+              </View>
             )}
           </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          automaticallyAdjustContentInsets={true}
+          keyboardShouldPersistTaps="handled"
+          ref={scrollViewRef}
+        >
           <View style={styles.avatarSection}>
             <View style={styles.avatar}>
               <User size={48} color={colors.primary} />
@@ -214,8 +222,12 @@ export default function EditEmployeeScreen({ route, navigation }: any) {
                 setFormData({ ...formData, password: text })
               }
               icon={Lock}
-              secureTextEntry
               placeholder="Min 8 characters"
+              onFocus={() =>
+                setTimeout(() => {
+                  scrollViewRef.current?.scrollToEnd({ animated: true });
+                }, 100)
+              }
             />
           </View>
         </ScrollView>
@@ -242,9 +254,9 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   saveButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     backgroundColor: colors.secondary,
     justifyContent: "center",
     alignItems: "center",
@@ -256,6 +268,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 24,
+    paddingBottom: 70,
   },
   avatarSection: {
     alignItems: "center",

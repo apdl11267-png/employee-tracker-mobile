@@ -1,184 +1,293 @@
 import React, { useState } from "react";
 import {
-  StyleSheet,
   View,
   Text,
-  TextInput,
+  StyleSheet,
+  ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
+  TextInput,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
-import { useAuth } from "../context/AuthContext";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  employeeApi,
+  EmployeeData,
+  UpdateEmployeePayload,
+} from "../api/employeeApi";
 import { colors } from "../theme/colors";
-import { login } from "../api/authApi";
 import { AlertService } from "../components/AlertService";
+import {
+  ChevronLeft,
+  Save,
+  User,
+  Mail,
+  Briefcase,
+  Lock,
+  Calendar,
+} from "lucide-react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function LoginScreen() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const { signIn } = useAuth();
+// ✅ FIX 1: Move InputField OUTSIDE to prevent focus loss/keyboard dismissal
+const InputField = ({
+  label,
+  value,
+  onChangeText,
+  icon: Icon,
+  keyboardType,
+  secureTextEntry,
+  placeholder,
+}: any) => (
+  <View style={styles.inputGroup}>
+    <Text style={styles.label}>{label}</Text>
+    <View style={styles.inputWrapper}>
+      <Icon size={20} color={colors.text.muted} style={styles.inputIcon} />
+      <TextInput
+        style={styles.input}
+        value={value}
+        onChangeText={onChangeText}
+        keyboardType={keyboardType}
+        secureTextEntry={secureTextEntry}
+        placeholder={placeholder}
+        placeholderTextColor={colors.text.muted}
+      />
+    </View>
+  </View>
+);
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      AlertService.error({}, "Please fill in all fields");
+export default function EditEmployeeScreen({ route, navigation }: any) {
+  const { employee } = route.params as { employee: EmployeeData };
+  const queryClient = useQueryClient();
+
+  const [formData, setFormData] = useState({
+    displayName: employee.displayName,
+    email: employee.email,
+    department: employee.department,
+    role: employee.role,
+    totalLeave: employee.totalLeave.toString(),
+    remainingLeave: employee.remainingLeave.toString(),
+    password: "",
+  });
+
+  const mutation = useMutation({
+    mutationFn: (data: UpdateEmployeePayload) =>
+      employeeApi.updateEmployee(employee._id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
+      // Updated to match your new Service structure
+      AlertService.toast({
+        message: "Employee updated successfully.",
+        type: "success",
+      });
+
+      navigation.goBack();
+    },
+    onError: (error: any) => {
+      AlertService.error(error, "Update failed.");
+    },
+  });
+
+  const handleSave = () => {
+    if (!formData.displayName || !formData.email || !formData.department) {
+      AlertService.error("Please fill required fields", "error");
+
       return;
     }
 
-    setIsLoading(true);
-    try {
-      const response = await login({
-        email,
-        password,
-      });
+    const payload: UpdateEmployeePayload = {
+      displayName: formData.displayName,
+      email: formData.email,
+      department: formData.department,
+      role: formData.role,
+      totalLeave: parseFloat(formData.totalLeave),
+      remainingLeave: parseFloat(formData.remainingLeave),
+    };
 
-      const { accessToken, refreshToken, employee } = response.data;
-
-      const userData = {
-        id: employee.id || employee._id, // Backend returns id in login response (Postman: "id": "699eaede..."), but sometimes it's _id
-        email: employee.email,
-        displayName: employee.displayName,
-        role: employee.role,
-      };
-
-      await signIn(accessToken, refreshToken, userData);
-    } catch (error: any) {
-      console.error("Login error:", error);
-      AlertService.error(
-        error,
-        "Failed to login. Please check your credentials.",
-      );
-    } finally {
-      setIsLoading(false);
+    if (formData.password) {
+      if (formData.password.length < 8) {
+        AlertService.toast({
+          message: "Password must be at least 8 characters",
+          type: "error",
+        });
+        return;
+      }
+      payload.password = formData.password;
     }
+
+    mutation.mutate(payload);
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
-    >
-      <View style={styles.content}>
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        // ✅ FIX 2: Use 'padding' for iOS and 'height' or 'undefined' for Android
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+        // ✅ FIX 3: Increase this offset to push the screen further UP
+        keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+      >
         <View style={styles.header}>
-          <Text style={styles.title}>TrackLeave</Text>
-          <Text style={styles.subtitle}>Sign in to manage your leave</Text>
-        </View>
-
-        <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email Address</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your email"
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
-          </View>
-
           <TouchableOpacity
-            style={styles.loginButton}
-            onPress={handleLogin}
-            disabled={isLoading}
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
           >
-            {isLoading ? (
-              <ActivityIndicator color="#fff" />
+            <ChevronLeft size={28} color={colors.primary} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Edit Employee</Text>
+          <TouchableOpacity
+            onPress={handleSave}
+            disabled={mutation.isPending}
+            style={styles.saveButton}
+          >
+            {mutation.isPending ? (
+              <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Text style={styles.loginButtonText}>Sign In</Text>
+              <Save size={24} color="#fff" />
             )}
           </TouchableOpacity>
-
-          <TouchableOpacity style={styles.forgotPassword}>
-            <Text style={styles.forgotPasswordText}>
-              Forgot Password? Contact Admin
-            </Text>
-          </TouchableOpacity>
         </View>
-      </View>
-    </KeyboardAvoidingView>
+
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          // ✅ FIX 4: Prevent keyboard from closing when tapping the form
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.avatarSection}>
+            <View style={styles.avatar}>
+              <User size={48} color={colors.primary} />
+            </View>
+            <Text style={styles.avatarName}>{employee.displayName}</Text>
+            <Text style={styles.avatarDept}>{employee.department}</Text>
+          </View>
+
+          <View style={styles.form}>
+            <InputField
+              label="Full Name"
+              value={formData.displayName}
+              onChangeText={(text: string) =>
+                setFormData({ ...formData, displayName: text })
+              }
+              icon={User}
+            />
+            <InputField
+              label="Email Address"
+              value={formData.email}
+              onChangeText={(text: string) =>
+                setFormData({ ...formData, email: text })
+              }
+              icon={Mail}
+              keyboardType="email-address"
+            />
+            <InputField
+              label="Department"
+              value={formData.department}
+              onChangeText={(text: string) =>
+                setFormData({ ...formData, department: text })
+              }
+              icon={Briefcase}
+            />
+
+            <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <InputField
+                  label="Total Leave"
+                  value={formData.totalLeave}
+                  onChangeText={(text: string) =>
+                    setFormData({ ...formData, totalLeave: text })
+                  }
+                  icon={Calendar}
+                  keyboardType="numeric"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <InputField
+                  label="Remaining"
+                  value={formData.remainingLeave}
+                  onChangeText={(text: string) =>
+                    setFormData({ ...formData, remainingLeave: text })
+                  }
+                  icon={Calendar}
+                  keyboardType="numeric"
+                />
+              </View>
+            </View>
+
+            <View style={styles.divider} />
+
+            <InputField
+              label="Reset Password"
+              value={formData.password}
+              onChangeText={(text: string) =>
+                setFormData({ ...formData, password: text })
+              }
+              icon={Lock}
+              secureTextEntry
+              placeholder="Min 8 characters"
+            />
+          </View>
+
+          {/* Extra bottom padding to ensure the last input isn't hidden by the keyboard */}
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  content: {
-    flex: 1,
-    padding: 24,
-    justifyContent: "center",
-  },
+  container: { flex: 1, backgroundColor: "#fff" },
   header: {
-    marginBottom: 40,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9",
   },
-  title: {
-    fontSize: 32,
-    fontWeight: "800",
-    color: colors.primary,
-    marginBottom: 8,
+  backButton: { padding: 4 },
+  saveButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.secondary,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  subtitle: {
-    fontSize: 16,
-    color: colors.neutral.base,
+  headerTitle: { fontSize: 20, fontWeight: "800", color: colors.primary },
+  scrollContent: { padding: 24 },
+  avatarSection: { alignItems: "center", marginBottom: 32 },
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: colors.neutral.light,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
   },
-  form: {
-    gap: 20,
-  },
-  inputContainer: {
-    gap: 8,
-  },
+  avatarName: { fontSize: 22, fontWeight: "700", color: colors.text.main },
+  avatarDept: { fontSize: 16, color: colors.text.muted, marginTop: 4 },
+  form: { gap: 20 },
+  inputGroup: { gap: 8 },
   label: {
     fontSize: 14,
     fontWeight: "600",
-    color: colors.neutral.base,
+    color: colors.text.main,
+    marginLeft: 4,
   },
-  input: {
-    height: 52,
+  inputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.neutral.light,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: "#E2E8F0",
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    backgroundColor: "#F8FAFC",
+    paddingHorizontal: 12,
   },
-  loginButton: {
-    height: 52,
-    backgroundColor: colors.secondary,
-    borderRadius: 12,
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 12,
-    shadowColor: colors.secondary,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  loginButtonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  forgotPassword: {
-    alignItems: "center",
-    marginTop: 8,
-  },
-  forgotPasswordText: {
-    color: colors.neutral.base,
-    fontSize: 14,
-  },
+  inputIcon: { marginRight: 12 },
+  input: { flex: 1, height: 48, fontSize: 16, color: colors.text.main },
+  row: { flexDirection: "row", gap: 16 },
+  divider: { height: 1, backgroundColor: "#E2E8F0", marginVertical: 8 },
 });
