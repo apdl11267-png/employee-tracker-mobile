@@ -6,7 +6,7 @@ import { eventBus } from '../utils/eventBus';
 
 
 // const URL = 'https://employee-tracker-uxeh.onrender.com';
-const URL = 'http://192.168.1.65:4001';
+const URL = 'http://192.168.1.7:4001';
 const BASE_URL = Platform.select({
     ios: `${URL}/api/v1`,
     android: `${URL}/api/v1`,

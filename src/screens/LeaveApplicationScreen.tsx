@@ -88,26 +88,46 @@ export default function LeaveApplicationScreen({ navigation }: any) {
         delete clone[dateIso];
         return clone;
       });
-      setActiveDateForConfig(null);
     } else {
-      // Add and Show Sheet
       setSelectedDatesMap((prev) => ({
         ...prev,
         [dateIso]: { ...DEFAULT_CONFIG, dateIso },
       }));
-      setActiveDateForConfig(dateIso);
-      setTimeout(() => {
-        bottomSheetModalRef.current?.present();
-      }, 50);
     }
   };
 
-  const handleSaveDateConfig = (config: DateConfig) => {
-    setSelectedDatesMap((prev) => ({
-      ...prev,
-      [config.dateIso]: config,
-    }));
+  const handleSaveDateConfig = (configs: Record<string, DateConfig>) => {
+    setSelectedDatesMap(configs);
     bottomSheetModalRef.current?.dismiss();
+  };
+
+  const handleFinalSubmit = (finalTimeline: DateConfig[]) => {
+    const payload = {
+      employeeId: user?.id,
+      requestType,
+      leaveDetails: {
+        category: requestType === "wfh" ? "WFH" : "Leave",
+        totalDaysRequested: finalTimeline.reduce(
+          (acc, curr) => acc + curr.deductionValue,
+          0,
+        ),
+        paidDaysCount:
+          requestType === "wfh"
+            ? 0
+            : finalTimeline
+                .filter((d) => d.isPaid)
+                .reduce((acc, curr) => acc + curr.deductionValue, 0),
+        unpaidDaysCount:
+          requestType === "wfh"
+            ? 0
+            : finalTimeline
+                .filter((d) => !d.isPaid)
+                .reduce((acc, curr) => acc + curr.deductionValue, 0),
+        requestedTimeline: finalTimeline,
+      },
+    };
+
+    mutation.mutate(payload);
   };
 
   const handleRemoveDate = (dateIso: string) => {
@@ -119,26 +139,12 @@ export default function LeaveApplicationScreen({ navigation }: any) {
     bottomSheetModalRef.current?.dismiss();
   };
 
-  const handleSubmit = () => {
+  const handleOpenConfig = () => {
     if (selectedDatesArray.length === 0) {
       AlertService.error({}, "Please select at least one date.", "Notice");
       return;
     }
-
-    const payload = {
-      employeeId: user?.id,
-      requestType,
-      leaveDetails: {
-        category: requestType === "wfh" ? "WFH" : "Leave",
-        totalDaysRequested,
-        paidDaysCount: requestType === "wfh" ? 0 : paidDaysCount,
-        unpaidDaysCount: requestType === "wfh" ? 0 : unpaidDaysCount,
-        requestedTimeline: Object.values(selectedDatesMap),
-      },
-    };
-
-    console.log({ timeline: payload.leaveDetails.requestedTimeline, payload });
-    mutation.mutate(payload);
+    bottomSheetModalRef.current?.present();
   };
 
   return (
@@ -238,14 +244,14 @@ export default function LeaveApplicationScreen({ navigation }: any) {
               styles.submitButton,
               mutation.isPending && styles.submitButtonDisabled,
             ]}
-            onPress={handleSubmit}
+            onPress={handleOpenConfig}
             disabled={mutation.isPending}
           >
             {mutation.isPending ? (
               <ActivityIndicator color={colors.text.inverse} />
             ) : (
               <Text style={styles.submitButtonText}>
-                Submit {requestType === "wfh" ? "WFH" : "Leave"}
+                Configure {requestType === "wfh" ? "WFH" : "Leave"}
               </Text>
             )}
           </TouchableOpacity>
@@ -254,15 +260,12 @@ export default function LeaveApplicationScreen({ navigation }: any) {
       <DateConfigSheet
         ref={bottomSheetModalRef}
         submitBtnRef={submitBtnRef}
-        selectedDate={activeDateForConfig}
+        selectedDatesMap={selectedDatesMap}
         requestType={requestType}
-        initialConfig={
-          activeDateForConfig
-            ? selectedDatesMap[activeDateForConfig]
-            : undefined
-        }
         onSave={handleSaveDateConfig}
+        onSubmit={handleFinalSubmit}
         onRemove={handleRemoveDate}
+        isSubmitting={mutation.isPending}
       />
     </View>
   );

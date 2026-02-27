@@ -153,7 +153,9 @@ export default function HomeScreen({ navigation }: any) {
         )}
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Requests</Text>
+          <Text style={styles.sectionTitle}>
+            Leave/WFH ({format(new Date(), "MMMM")})
+          </Text>
           <TouchableOpacity onPress={() => navigation.navigate("LeaveHistory")}>
             <Text style={styles.seeAll}>See All</Text>
           </TouchableOpacity>
@@ -193,7 +195,7 @@ export default function HomeScreen({ navigation }: any) {
           ))
         ) : (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No recent leave requests</Text>
+            <Text style={styles.emptyText}>No data for this month</Text>
           </View>
         )}
       </ScrollView>

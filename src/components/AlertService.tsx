@@ -46,13 +46,15 @@ export class AlertService {
     message,
     type = "info",
     timeout = 1000,
+    position = "top",
   }: {
     message: string;
     type?: "info" | "success" | "error";
     timeout?: number;
+    position?: "top" | "bottom";
   }) {
     if (toastRef.current) {
-      toastRef.current.show(message, type, timeout);
+      toastRef.current.show(message, type, timeout, position);
       console.log("Toast shown:", message);
     } else {
       console.log("Toast fallback:", message);
@@ -80,6 +82,7 @@ export const GlobalToast = forwardRef((props, ref) => {
       msg: string,
       toastType: "info" | "success" | "error" = "info",
       timeout: number = 1000,
+      position: "top" | "bottom" = "top",
     ) => {
       setMessage(msg);
       setType(toastType);
@@ -94,7 +97,7 @@ export const GlobalToast = forwardRef((props, ref) => {
 
       setTimeout(() => {
         Animated.timing(translateY, {
-          toValue: -150,
+          toValue: -750,
           duration: 150,
           useNativeDriver: true,
         }).start(() => setVisible(false));
@@ -128,7 +131,7 @@ export const GlobalToast = forwardRef((props, ref) => {
 const styles = StyleSheet.create({
   toastContainer: {
     position: "absolute",
-    top: 0,
+    bottom: 100,
     left: "5%",
     right: "5%",
     width: "90%",
