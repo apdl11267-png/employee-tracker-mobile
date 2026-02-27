@@ -23,7 +23,7 @@ export const tenantSearch = async (slug: string): Promise<TenantData> => {
 
 
 export const tenantCreate = async (name: string, slug: string): Promise<TenantData> => {
-    console.log("Creating organization...", name, slug);
+    // console.log("Creating organization...", name, slug);
     const response = await apiClient.post("/tenants", {
         name: name.trim(),
         slug: slug.toLowerCase().trim(),

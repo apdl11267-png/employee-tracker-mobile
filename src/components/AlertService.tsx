@@ -55,7 +55,7 @@ export class AlertService {
   }) {
     if (toastRef.current) {
       toastRef.current.show(message, type, timeout, position);
-      console.log("Toast shown:", message);
+      // console.log("Toast shown:", message);
     } else {
       console.log("Toast fallback:", message);
     }

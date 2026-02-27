@@ -71,7 +71,7 @@ export const applyForLeave = async (payload: LeaveRequestPayload) => {
 export const getMyLeaves = async (startDate?: string, endDate?: string) => {
     const params = { startDate, endDate };
     const response = await apiClient.get<LeaveResponse>('/leaves/mine', { params });
-    console.log(response.data);
+    // console.log(response.data);
     return response.data;
 };
 

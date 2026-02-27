@@ -69,7 +69,6 @@ export default function HomeScreen({ navigation }: any) {
 
   const summary = data?.data?.summary;
   const recentLeaves = data?.data?.leaveDetails?.slice(0, 5) || [];
-  console.log({ recentLeaves });
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {

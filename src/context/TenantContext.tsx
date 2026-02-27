@@ -33,9 +33,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({
     async function loadStoredTenant() {
       try {
         const storedTenant = await AsyncStorage.getItem(TENANT_STORAGE_KEY);
-        console.log({
-          storedTenant,
-        });
+
         if (storedTenant) {
           setCurrentTenant(JSON.parse(storedTenant));
         }

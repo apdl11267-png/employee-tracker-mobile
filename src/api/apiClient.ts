@@ -31,9 +31,9 @@ apiClient.interceptors.request.use(
         try {
             const storedTenant = await AsyncStorage.getItem('@selected_tenant');
             if (storedTenant) {
-                console.log({
-                    storedTenant
-                })
+                // console.log({
+                //     storedTenant
+                // })
                 const tenant = JSON.parse(storedTenant);
                 if (tenant.id) {
                     config.headers['x-tenant-id'] = tenant.id;

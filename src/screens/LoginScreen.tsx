@@ -60,9 +60,6 @@ export default function LoginScreen({ navigation }: any) {
 
     setIsLoading(true);
     try {
-      console.log({
-        currentTenant,
-      });
       const response = await login({
         email,
         password,
