@@ -38,4 +38,9 @@ export const employeeApi = {
         const response = await apiClient.get(`/leaves/employee/${id}`);
         return response.data;
     },
+
+    getEmployeeLogs: async (id: string): Promise<any> => {
+        const response = await apiClient.get(`/auth/employee-logs/${id}`);
+        return response.data;
+    },
 };

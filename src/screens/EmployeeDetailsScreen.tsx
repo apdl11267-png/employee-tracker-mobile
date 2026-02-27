@@ -21,6 +21,7 @@ import {
   CheckCircle2,
   XCircle,
   Edit2,
+  History,
 } from "lucide-react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -32,8 +33,14 @@ export default function EmployeeDetailsScreen({ route, navigation }: any) {
     queryFn: () => employeeApi.getEmployeeLeaves(employee._id),
   });
 
+  const { data: logsData, isLoading: isLoadingLogs } = useQuery({
+    queryKey: ["employeeLogs", employee._id],
+    queryFn: () => employeeApi.getEmployeeLogs(employee._id),
+  });
+
   const leaves = leavesData?.data?.leaveDetails || [];
   const summary = leavesData?.data?.summary;
+  const logs = logsData?.data || [];
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -76,6 +83,37 @@ export default function EmployeeDetailsScreen({ route, navigation }: any) {
         >
           {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
         </Text>
+      </View>
+    </View>
+  );
+
+  const renderLogItem = ({ item }: { item: any }) => (
+    <View style={styles.logItem}>
+      <View style={styles.logHeader}>
+        <Text style={styles.logAdmin}>
+          {item.updatedBy?.displayName || "Admin"} updated
+        </Text>
+        <Text style={styles.logDate}>
+          {format(new Date(item.createdAt), "MMM dd, HH:mm")}
+        </Text>
+      </View>
+      <View style={styles.logChanges}>
+        {item.changes.map((change: any, index: number) => (
+          <View key={index} style={styles.changeItem}>
+            <Text style={styles.fieldName}>
+              {change.field.charAt(0).toUpperCase() + change.field.slice(1)}:
+            </Text>
+            <View style={styles.changeValues}>
+              <Text style={styles.oldValue}>{String(change.oldValue)}</Text>
+              <ChevronLeft
+                size={12}
+                color={colors.text.muted}
+                style={{ transform: [{ rotate: "180deg" }] }}
+              />
+              <Text style={styles.newValue}>{String(change.newValue)}</Text>
+            </View>
+          </View>
+        ))}
       </View>
     </View>
   );
@@ -180,6 +218,25 @@ export default function EmployeeDetailsScreen({ route, navigation }: any) {
             <Text style={styles.emptyText}>
               No leave records found for this year.
             </Text>
+          </View>
+        )}
+
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Update History</Text>
+          <History size={18} color={colors.text.muted} />
+        </View>
+        {isLoadingLogs ? (
+          <ActivityIndicator
+            style={{ marginVertical: 20 }}
+            color={colors.primary}
+          />
+        ) : logs.length > 0 ? (
+          logs.map((log: any) => (
+            <View key={log._id}>{renderLogItem({ item: log })}</View>
+          ))
+        ) : (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>No update logs found.</Text>
           </View>
         )}
       </ScrollView>
@@ -357,5 +414,65 @@ const styles = StyleSheet.create({
   emptyText: {
     color: colors.text.muted,
     fontSize: 14,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 12,
+  },
+  logItem: {
+    backgroundColor: "#fff",
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.status.pending,
+  },
+  logHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  logAdmin: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.text.main,
+  },
+  logDate: {
+    fontSize: 12,
+    color: colors.text.muted,
+  },
+  logChanges: {
+    gap: 8,
+  },
+  changeItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
+  },
+  fieldName: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.text.muted,
+    minWidth: 80,
+  },
+  changeValues: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    flex: 1,
+  },
+  oldValue: {
+    fontSize: 13,
+    color: colors.status.rejected,
+    textDecorationLine: "line-through",
+  },
+  newValue: {
+    fontSize: 13,
+    color: colors.status.approved,
+    fontWeight: "600",
   },
 });

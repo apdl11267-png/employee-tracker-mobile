@@ -74,7 +74,7 @@ apiClient.interceptors.response.use(
                 const refreshToken = await SecureStore.getItemAsync('refresh_token');
 
                 if (!refreshToken) {
-                    throw new Error('No refresh token available');
+                    throw new Error('Unauthorized');
                 }
 
                 const response = await axios.post(`${BASE_URL}/auth/refresh-token`, {
