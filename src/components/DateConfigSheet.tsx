@@ -214,7 +214,7 @@ export const DateConfigSheet = forwardRef<
                 ))}
               </View>
 
-              <View style={styles.dualRow}>
+              <View style={styles.dualColumn}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.label}>Day Type</Text>
                   <View style={styles.row}>
@@ -279,7 +279,7 @@ export const DateConfigSheet = forwardRef<
                           !globalConfig.isPaid && styles.pillTextActive,
                         ]}
                       >
-                        UNP
+                        UnPaid
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -489,7 +489,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   row: { flexDirection: "row", gap: 8 },
-  dualRow: { flexDirection: "row", gap: 16 },
+  dualColumn: { flexDirection: "column", gap: 16 },
   rowWrapper: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   pill: {
     paddingVertical: 6,

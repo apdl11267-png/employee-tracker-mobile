@@ -37,6 +37,7 @@ export default function LeaveApplicationScreen({ navigation }: any) {
   const [activeDateForConfig, setActiveDateForConfig] = useState<string | null>(
     null,
   );
+  const [hasSubmitted, setHasSubmitted] = useState(false);
   const submitBtnRef = useRef<ScrollView>(null);
 
   // Derive simple array of dates for the calendar
@@ -60,12 +61,13 @@ export default function LeaveApplicationScreen({ navigation }: any) {
   const mutation = useMutation({
     mutationFn: applyForLeave,
     onSuccess: () => {
+      setHasSubmitted(true);
+      setSelectedDatesMap({}); // Reset first to clear the listener condition
       AlertService.success(
         "Success",
         `${requestType === "wfh" ? "WFH" : "Leave"} application submitted successfully.`,
       );
       navigation.goBack();
-      setSelectedDatesMap({}); // Reset
     },
     onError: (error: any) => {
       AlertService.error(error, "Failed to submit application.");
@@ -78,6 +80,26 @@ export default function LeaveApplicationScreen({ navigation }: any) {
       bottomSheetModalRef.current?.present();
     }
   }, [activeDateForConfig]);
+
+  // Handle accidental exit with selected dates
+  React.useEffect(
+    () =>
+      navigation.addListener("beforeRemove", (e: any) => {
+        // Skip if nothing selected OR if we just submitted successfully
+        if (selectedDatesArray.length === 0 || hasSubmitted) {
+          return;
+        }
+
+        e.preventDefault();
+
+        AlertService.confirm(
+          "Discard Request?",
+          "Are you sure you want to go back? Your selected dates and configurations will be lost.",
+          () => navigation.dispatch(e.data.action),
+        );
+      }),
+    [navigation, selectedDatesArray.length, hasSubmitted],
+  );
 
   const handleDateSelect = (dateIso: string) => {
     const isAlreadySelected = !!selectedDatesMap[dateIso];
