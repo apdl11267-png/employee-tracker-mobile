@@ -5,7 +5,8 @@ import { Platform } from 'react-native';
 import { eventBus } from '../utils/eventBus';
 
 
-const URL = 'https://employee-tracker-uxeh.onrender.com';
+// const URL = 'https://employee-tracker-uxeh.onrender.com';
+const URL = 'http://192.168.1.65:4001';
 const BASE_URL = Platform.select({
     ios: `${URL}/api/v1`,
     android: `${URL}/api/v1`,
@@ -30,6 +31,9 @@ apiClient.interceptors.request.use(
         try {
             const storedTenant = await AsyncStorage.getItem('@selected_tenant');
             if (storedTenant) {
+                console.log({
+                    storedTenant
+                })
                 const tenant = JSON.parse(storedTenant);
                 if (tenant.id) {
                     config.headers['x-tenant-id'] = tenant.id;
@@ -67,6 +71,14 @@ apiClient.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
+
+        const authRoutes = ['/login', '/signup', '/tenants/search', '/auth/refresh-token', '/forgot-password'];
+
+        const isAuthRoute = authRoutes.some(route => originalRequest.url?.includes(route));
+
+        if (isAuthRoute) {
+            return Promise.reject(error);
+        }
 
         if (error.response?.status === 401 && !originalRequest._retry) {
             if (isRefreshing) {

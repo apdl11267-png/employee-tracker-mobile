@@ -15,6 +15,7 @@ import { useTenant } from "../context/TenantContext";
 import apiClient from "../api/apiClient";
 import { colors } from "../theme/colors";
 import { Building2, Plus, ArrowLeft } from "lucide-react-native";
+import { tenantCreate } from "../api/tenantApi";
 
 const RegisterOrganizationScreen = ({ navigation }: any) => {
   const [name, setName] = useState("");
@@ -38,12 +39,7 @@ const RegisterOrganizationScreen = ({ navigation }: any) => {
     setError(null);
 
     try {
-      const response = await apiClient.post("/tenants", {
-        name: name.trim(),
-        slug: slug.toLowerCase().trim(),
-      });
-
-      const tenantData = response.data.data;
+      const tenantData = await tenantCreate(name, slug);
 
       await setTenant({
         id: tenantData.id,

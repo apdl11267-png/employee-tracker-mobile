@@ -74,3 +74,23 @@ export const createEmployee = async (payload: CreateEmployeePayload) => {
         throw error;
     }
 };
+
+export const checkTenantAdmin = async (tenantId: string) => {
+    try {
+        const response = await apiClient.get(`/auth/tenant/${tenantId}/has-admin`);
+        return response.data.data;
+    } catch (error) {
+        console.error("Check tenant admin error:", error);
+        throw error;
+    }
+};
+
+export const registerFirstAdmin = async (payload: any) => {
+    try {
+        const response = await apiClient.post('/auth/tenant/register-admin', payload);
+        return response.data;
+    } catch (error) {
+        console.error("Register first admin error:", error);
+        throw error;
+    }
+};

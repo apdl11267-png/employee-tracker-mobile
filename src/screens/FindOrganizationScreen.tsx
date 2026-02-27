@@ -5,16 +5,14 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Image,
 } from "react-native";
 import { useTenant } from "../context/TenantContext";
-import apiClient from "../api/apiClient";
 import { colors } from "../theme/colors";
 import { Search, Building2, ArrowRight } from "lucide-react-native";
+import { tenantSearch } from "../api/tenantApi";
 
 const FindOrganizationScreen = ({ navigation }: any) => {
   const [slug, setSlug] = useState("");
@@ -32,10 +30,11 @@ const FindOrganizationScreen = ({ navigation }: any) => {
     setError(null);
 
     try {
-      const response = await apiClient.get(
-        `/tenants/search?slug=${slug.toLowerCase().trim()}`,
-      );
-      const tenantData = response.data.data;
+      const tenantData = await tenantSearch(slug);
+
+      console.log({
+        tenantData,
+      });
 
       await setTenant({
         id: tenantData.id,
@@ -57,7 +56,7 @@ const FindOrganizationScreen = ({ navigation }: any) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.content}
@@ -118,7 +117,7 @@ const FindOrganizationScreen = ({ navigation }: any) => {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 };
 

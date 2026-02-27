@@ -13,6 +13,7 @@ import EditEmployeeScreen from "./screens/EditEmployeeScreen";
 import EmployeeDetailsScreen from "./screens/EmployeeDetailsScreen";
 import FindOrganizationScreen from "./screens/FindOrganizationScreen";
 import RegisterOrganizationScreen from "./screens/RegisterOrganizationScreen";
+import RegisterAdminScreen from "./screens/RegisterAdminScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -45,7 +46,10 @@ export default function AppNavigator() {
         </>
       ) : !user ? (
         // Phase 2: User Login (Scoped to Tenant)
-        <Stack.Screen name="Login" component={LoginScreen} />
+        <>
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="RegisterAdmin" component={RegisterAdminScreen} />
+        </>
       ) : (
         // Phase 3: Authenticated App
         <>
