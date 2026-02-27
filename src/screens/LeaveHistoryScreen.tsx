@@ -58,45 +58,57 @@ export default function LeaveHistoryScreen({ navigation }: any) {
 
   const leaveApplications = data?.data?.leaveDetails || [];
 
-  const renderItem = ({ item }: { item: any }) => (
-    <TouchableOpacity
-      style={styles.card}
-      onPress={() => {
-        /* navigate to detail if needed */
-      }}
-    >
-      <View style={styles.cardHeader}>
-        <View style={styles.statusContainer}>
-          {getStatusIcon(item.status)}
-          <Text
-            style={[styles.statusText, { color: getStatusColor(item.status) }]}
-          >
-            {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-          </Text>
-        </View>
-        <Text style={styles.dateText}>
-          Applied {format(parseISO(item.createdAt), "MMM dd")}
-        </Text>
-      </View>
+  const renderItem = ({ item }: { item: any }) => {
+    const firstDate = item.timeline?.[0]?.dateIso;
+    const lastDate = item.timeline?.[item.timeline.length - 1]?.dateIso;
+    const dateRange =
+      item.timeline.length > 1
+        ? `${format(parseISO(firstDate), "MMM dd")} - ${format(parseISO(lastDate), "MMM dd")}`
+        : format(parseISO(firstDate), "MMM dd, yyyy");
 
-      <View style={styles.cardBody}>
-        <View style={styles.detailsContainer}>
-          <Text style={styles.categoryTitle}>
-            {item.requestType.toUpperCase()}
-          </Text>
-          <Text style={styles.daysText}>
-            {format(parseISO(item.dateIso), "MMM dd, yyyy")}
-            <Text style={styles.daysSubtext}>
-              {" "}
-              • {item.dayType === "full" ? "Full Day" : "Half Day"} •{" "}
-              {item.isPaid ? "Paid" : "Unpaid"}
+    return (
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() => {
+          navigation.navigate("LeaveDetails", { id: item._id });
+        }}
+      >
+        <View style={styles.cardHeader}>
+          <View style={styles.statusContainer}>
+            {getStatusIcon(item.status)}
+            <Text
+              style={[
+                styles.statusText,
+                { color: getStatusColor(item.status) },
+              ]}
+            >
+              {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
             </Text>
+          </View>
+          <Text style={styles.dateText}>
+            Applied {format(parseISO(item.createdAt), "MMM dd")}
           </Text>
         </View>
-        <ChevronRight size={20} color={colors.neutral.base} />
-      </View>
-    </TouchableOpacity>
-  );
+
+        <View style={styles.cardBody}>
+          <View style={styles.detailsContainer}>
+            <Text style={styles.categoryTitle}>
+              {item.leaveDetails.category}
+            </Text>
+            <Text style={styles.daysText}>
+              {dateRange}
+              <Text style={styles.daysSubtext}>
+                {" "}
+                • {item.leaveDetails.totalDaysRequested} Days •{" "}
+                {item.requestType.toUpperCase()}
+              </Text>
+            </Text>
+          </View>
+          <ChevronRight size={20} color={colors.neutral.base} />
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>

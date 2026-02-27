@@ -30,12 +30,28 @@ export interface LeaveSummary {
 
 export interface LeaveDetail {
     _id: string;
+    applicationId: string;
     requestType: string;
-    dateIso: string;
-    dayType: string;
-    isPaid: boolean;
-    status: 'pending' | 'approved' | 'rejected';
-    deductionValue: number;
+    status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+    leaveDetails: {
+        category: string;
+        totalDaysRequested: number;
+        paidDaysCount: number;
+        unpaidDaysCount: number;
+    };
+    approvalWorkflow: {
+        currentPendingApproverRole: string;
+        history: {
+            approverId: string;
+            approverRole: string;
+            status: string;
+            message: string;
+            timestamp: string;
+        }[];
+    };
+    timeline: LeaveTimelineEntry[];
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface LeaveResponse {
@@ -66,5 +82,15 @@ export const getAllLeavesForAdmin = async (filters?: { status?: string; requestT
 
 export const updateLeaveStatus = async (id: string, payload: { status: string; message?: string; approverId: string; approverRole: string }) => {
     const response = await apiClient.patch(`/leaves/${id}/status`, payload);
+    return response.data;
+};
+
+export const getLeaveById = async (id: string) => {
+    const response = await apiClient.get<{ success: boolean; data: LeaveDetail }>(`/leaves/${id}`);
+    return response.data;
+};
+
+export const cancelLeave = async (id: string) => {
+    const response = await apiClient.post(`/leaves/${id}/cancel`);
     return response.data;
 };

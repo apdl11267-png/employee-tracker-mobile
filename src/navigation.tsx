@@ -14,6 +14,7 @@ import EmployeeDetailsScreen from "./screens/EmployeeDetailsScreen";
 import FindOrganizationScreen from "./screens/FindOrganizationScreen";
 import RegisterOrganizationScreen from "./screens/RegisterOrganizationScreen";
 import RegisterAdminScreen from "./screens/RegisterAdminScreen";
+import LeaveDetailsScreen from "./screens/LeaveDetailsScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -56,6 +57,7 @@ export default function AppNavigator() {
           <Stack.Screen name="Home" component={HomeScreen} />
           <Stack.Screen name="LeaveHistory" component={LeaveHistoryScreen} />
           <Stack.Screen name="ApplyLeave" component={LeaveApplicationScreen} />
+          <Stack.Screen name="LeaveDetails" component={LeaveDetailsScreen} />
 
           {isAdmin && (
             <>

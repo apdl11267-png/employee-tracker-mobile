@@ -10,7 +10,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { employeeApi, EmployeeData } from "../api/employeeApi";
 import { colors } from "../theme/colors";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import {
   ChevronLeft,
   User,
@@ -64,28 +64,34 @@ export default function EmployeeDetailsScreen({ route, navigation }: any) {
     }
   };
 
-  const renderLeaveItem = ({ item }: { item: any }) => (
-    <View style={styles.leaveItem}>
-      <View style={styles.leaveInfo}>
-        <Text style={styles.leaveDate}>
-          {format(new Date(item.dateIso), "MMM dd, yyyy")}
-        </Text>
-        <Text style={styles.leaveType}>
-          {item.dayType === "full" ? "Full Day" : "Half Day"} •{" "}
-          {item.isPaid ? "Paid" : "Unpaid"}
-        </Text>
-        {item.reason && <Text style={styles.leaveReason}>{item.reason}</Text>}
+  const renderLeaveItem = ({ item }: { item: any }) => {
+    const firstDate = item.timeline?.[0]?.dateIso;
+    const lastDate = item.timeline?.[item.timeline.length - 1]?.dateIso;
+    const dateRange =
+      item.timeline.length > 1
+        ? `${format(parseISO(firstDate), "MMM dd")} - ${format(parseISO(lastDate), "MMM dd")}`
+        : format(parseISO(firstDate), "MMM dd, yyyy");
+
+    return (
+      <View style={styles.leaveItem}>
+        <View style={styles.leaveInfo}>
+          <Text style={styles.leaveDate}>{dateRange}</Text>
+          <Text style={styles.leaveType}>
+            {item.leaveDetails.category} •{" "}
+            {item.leaveDetails.totalDaysRequested} Days
+          </Text>
+        </View>
+        <View style={styles.statusBadge}>
+          {getStatusIcon(item.status)}
+          <Text
+            style={[styles.statusText, { color: getStatusColor(item.status) }]}
+          >
+            {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+          </Text>
+        </View>
       </View>
-      <View style={styles.statusBadge}>
-        {getStatusIcon(item.status)}
-        <Text
-          style={[styles.statusText, { color: getStatusColor(item.status) }]}
-        >
-          {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-        </Text>
-      </View>
-    </View>
-  );
+    );
+  };
 
   const renderLogItem = ({ item }: { item: any }) => (
     <View style={styles.logItem}>

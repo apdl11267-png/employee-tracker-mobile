@@ -7,9 +7,16 @@ import {
   TouchableOpacity,
   StatusBar,
   Alert,
+  RefreshControl,
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
-import { format, startOfMonth, endOfMonth, addMonths } from "date-fns";
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  addMonths,
+  parseISO,
+} from "date-fns";
 import {
   Calendar,
   Clock,
@@ -55,7 +62,7 @@ export default function HomeScreen({ navigation }: any) {
   const startDate = format(startOfMonth(new Date()), "yyyy-MM-dd");
   const endDate = format(endOfMonth(addMonths(new Date(), 1)), "yyyy-MM-dd");
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ["leaves", startDate, endDate],
     queryFn: () => getMyLeaves(startDate, endDate),
   });
@@ -65,22 +72,26 @@ export default function HomeScreen({ navigation }: any) {
   console.log({ recentLeaves });
 
   const getStatusColor = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case "approved":
         return colors.status.approved;
       case "rejected":
         return colors.status.rejected;
+      case "cancelled":
+        return colors.neutral.base;
       default:
         return colors.status.pending;
     }
   };
 
   const getStatusIcon = (status: string) => {
-    switch (status) {
+    switch (status.toLowerCase()) {
       case "approved":
         return <CheckCircle2 size={16} color={colors.status.approved} />;
       case "rejected":
         return <XCircle size={16} color={colors.status.rejected} />;
+      case "cancelled":
+        return <XCircle size={16} color={colors.neutral.base} />;
       default:
         return <Clock size={16} color={colors.status.pending} />;
     }
@@ -103,6 +114,9 @@ export default function HomeScreen({ navigation }: any) {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+        }
       >
         <View style={styles.statsGrid}>
           <StatCard
@@ -167,35 +181,46 @@ export default function HomeScreen({ navigation }: any) {
         {isLoading ? (
           <Text style={styles.loadingText}>Loading requests...</Text>
         ) : recentLeaves.length > 0 ? (
-          recentLeaves.map((leave: any) => (
-            <TouchableOpacity
-              key={leave._id}
-              style={styles.leaveItem}
-              onPress={() => navigation.navigate("LeaveHistory")}
-            >
-              <View style={styles.leaveInfo}>
-                <Text style={styles.leaveDate}>
-                  {format(new Date(leave.dateIso), "MMM dd, yyyy")}
-                </Text>
-                <Text style={styles.leaveType}>
-                  {leave.dayType === "full" ? "Full Day" : "Half Day"} •{" "}
-                  {leave.isPaid ? "Paid" : "Unpaid"}
-                </Text>
-              </View>
-              <View style={styles.statusBadge}>
-                {getStatusIcon(leave.status)}
-                <Text
-                  style={[
-                    styles.statusText,
-                    { color: getStatusColor(leave.status) },
-                  ]}
-                >
-                  {leave.status.charAt(0).toUpperCase() + leave.status.slice(1)}
-                </Text>
-                <ChevronRight size={16} color={colors.neutral.base} />
-              </View>
-            </TouchableOpacity>
-          ))
+          recentLeaves.map((leave: any) => {
+            const firstDate = leave.timeline?.[0]?.dateIso;
+            const lastDate =
+              leave.timeline?.[leave.timeline.length - 1]?.dateIso;
+            const dateRange =
+              leave.timeline.length > 1
+                ? `${format(parseISO(firstDate), "MMM dd")} - ${format(parseISO(lastDate), "MMM dd")}`
+                : format(parseISO(firstDate), "MMM dd, yyyy");
+
+            return (
+              <TouchableOpacity
+                key={leave._id}
+                style={styles.leaveItem}
+                onPress={() =>
+                  navigation.navigate("LeaveDetails", { id: leave._id })
+                }
+              >
+                <View style={styles.leaveInfo}>
+                  <Text style={styles.leaveDate}>{dateRange}</Text>
+                  <Text style={styles.leaveType}>
+                    {leave.leaveDetails.category} •{" "}
+                    {leave.leaveDetails.totalDaysRequested} Days
+                  </Text>
+                </View>
+                <View style={styles.statusBadge}>
+                  {getStatusIcon(leave.status)}
+                  <Text
+                    style={[
+                      styles.statusText,
+                      { color: getStatusColor(leave.status) },
+                    ]}
+                  >
+                    {leave.status.charAt(0).toUpperCase() +
+                      leave.status.slice(1)}
+                  </Text>
+                  <ChevronRight size={16} color={colors.neutral.base} />
+                </View>
+              </TouchableOpacity>
+            );
+          })
         ) : (
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>No data for this/next month</Text>

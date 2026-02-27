@@ -177,9 +177,11 @@ export const CollapsibleLeaveItem: React.FC<Props> = ({
           {item.timeline?.map((day, index) => (
             <View key={day._id || index} style={styles.timelineItem}>
               <View style={styles.timelineDate}>
-                <Text style={styles.timelineDateText}>{day.reasonCode}</Text>
                 <Text style={styles.timelineDateText}>
                   {format(parseISO(day.dateIso), "EEE, MMM dd")}
+                </Text>
+                <Text style={styles.timelineReasonText}>
+                  {day.reasonCode || "No reason specified"}
                 </Text>
               </View>
               <View style={styles.timelineConfig}>
@@ -358,7 +360,13 @@ const styles = StyleSheet.create({
   timelineDateText: {
     fontSize: 14,
     color: colors.primary,
-    fontWeight: "500",
+    fontWeight: "700",
+  },
+  timelineReasonText: {
+    fontSize: 12,
+    color: colors.text.muted,
+    marginTop: 2,
+    fontStyle: "italic",
   },
   timelineConfig: {
     flexDirection: "row",
