@@ -9,7 +9,7 @@ import {
   Alert,
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
-import { format, startOfMonth, endOfMonth } from "date-fns";
+import { format, startOfMonth, endOfMonth, addMonths } from "date-fns";
 import {
   Calendar,
   Clock,
@@ -53,7 +53,7 @@ export default function HomeScreen({ navigation }: any) {
   };
 
   const startDate = format(startOfMonth(new Date()), "yyyy-MM-dd");
-  const endDate = format(endOfMonth(new Date()), "yyyy-MM-dd");
+  const endDate = format(endOfMonth(addMonths(new Date(), 1)), "yyyy-MM-dd");
 
   const { data, isLoading } = useQuery({
     queryKey: ["leaves", startDate, endDate],
@@ -62,6 +62,7 @@ export default function HomeScreen({ navigation }: any) {
 
   const summary = data?.data?.summary;
   const recentLeaves = data?.data?.leaveDetails?.slice(0, 5) || [];
+  console.log({ recentLeaves });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -92,6 +93,7 @@ export default function HomeScreen({ navigation }: any) {
         <View>
           <Text style={styles.welcomeText}>Hello,</Text>
           <Text style={styles.userName}>{user?.displayName || "Employee"}</Text>
+          <Text style={styles.userEmail}>{user?.email || "Employee"}</Text>
         </View>
         <TouchableOpacity style={styles.profileButton} onPress={handleLogout}>
           <UserIcon size={24} color={colors.primary} />
@@ -154,7 +156,8 @@ export default function HomeScreen({ navigation }: any) {
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>
-            Leave/WFH ({format(new Date(), "MMMM")})
+            Leave/WFH ({format(new Date(), "MMMM")}-
+            {format(addMonths(new Date(), 1), "MMMM")})
           </Text>
           <TouchableOpacity onPress={() => navigation.navigate("LeaveHistory")}>
             <Text style={styles.seeAll}>See All</Text>
@@ -195,7 +198,7 @@ export default function HomeScreen({ navigation }: any) {
           ))
         ) : (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No data for this month</Text>
+            <Text style={styles.emptyText}>No data for this/next month</Text>
           </View>
         )}
       </ScrollView>
@@ -232,6 +235,11 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "700",
     color: colors.text.main,
+  },
+  userEmail: {
+    fontSize: 12,
+    fontWeight: "400",
+    color: colors.text.muted,
   },
   profileButton: {
     width: 44,
