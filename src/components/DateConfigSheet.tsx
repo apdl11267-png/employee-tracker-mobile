@@ -20,7 +20,6 @@ import {
 import { colors } from "../theme/colors";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AlertService } from "./AlertService";
-import { ScrollView } from "react-native-gesture-handler";
 
 export interface DateConfig {
   dateIso: string;

@@ -4,11 +4,11 @@ import { Platform } from 'react-native';
 import { eventBus } from '../utils/eventBus';
 
 
-const DEV_IP = '192.168.1.7:4000'; // The IP used in LoginScreen.tsx
+const URL = 'https://employee-tracker-uxeh.onrender.com';
 const BASE_URL = Platform.select({
-    ios: `http://${DEV_IP}/api/v1`,
-    android: `http://${DEV_IP}/api/v1`,
-    default: `http://${DEV_IP}/api/v1`,
+    ios: `${URL}/api/v1`,
+    android: `${URL}/api/v1`,
+    default: `${URL}/api/v1`,
 });
 
 const apiClient = axios.create({
