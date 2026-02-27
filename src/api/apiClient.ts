@@ -1,5 +1,6 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 import { eventBus } from '../utils/eventBus';
 
@@ -24,6 +25,20 @@ apiClient.interceptors.request.use(
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
+
+        // Inject Tenant ID from storage
+        try {
+            const storedTenant = await AsyncStorage.getItem('@selected_tenant');
+            if (storedTenant) {
+                const tenant = JSON.parse(storedTenant);
+                if (tenant.id) {
+                    config.headers['x-tenant-id'] = tenant.id;
+                }
+            }
+        } catch (error) {
+            console.error('Error reading tenant for header:', error);
+        }
+
         return config;
     },
     (error) => {

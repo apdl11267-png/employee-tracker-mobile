@@ -8,21 +8,30 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from "react-native";
 import { useAuth } from "../context/AuthContext";
+import { useTenant } from "../context/TenantContext";
 import { colors } from "../theme/colors";
 import { login } from "../api/authApi";
 import { AlertService } from "../components/AlertService";
+import { Building2, LogIn, ChevronLeft } from "lucide-react-native";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { signIn } = useAuth();
+  const { currentTenant, clearTenant } = useTenant();
 
   const handleLogin = async () => {
     if (!email || !password) {
       AlertService.error({}, "Please fill in all fields");
+      return;
+    }
+
+    if (!currentTenant) {
+      AlertService.error({}, "Organization not selected");
       return;
     }
 
@@ -31,12 +40,13 @@ export default function LoginScreen() {
       const response = await login({
         email,
         password,
+        tenantId: currentTenant.id,
       });
 
       const { accessToken, refreshToken, employee } = response.data;
 
       const userData = {
-        id: employee.id || employee._id, // Backend returns id in login response (Postman: "id": "699eaede..."), but sometimes it's _id
+        id: employee.id || employee._id,
         email: employee.email,
         displayName: employee.displayName,
         role: employee.role,
@@ -59,55 +69,69 @@ export default function LoginScreen() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <Text style={styles.title}>TrackLeave</Text>
-          <Text style={styles.subtitle}>Sign in to manage your leave</Text>
-        </View>
-
-        <View style={styles.form}>
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Email Address</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your email"
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
-          </View>
-
-          <TouchableOpacity
-            style={styles.loginButton}
-            onPress={handleLogin}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.loginButtonText}>Sign In</Text>
-            )}
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.content}>
+          <TouchableOpacity style={styles.backButton} onPress={clearTenant}>
+            <ChevronLeft size={20} color={colors.neutral.base} />
+            <Text style={styles.backText}>Switch Organization</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.forgotPassword}>
-            <Text style={styles.forgotPasswordText}>
-              Forgot Password? Contact Admin
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.header}>
+            <View style={styles.tenantBadge}>
+              <Building2 size={16} color={colors.secondary} />
+              <Text style={styles.tenantName}>{currentTenant?.name}</Text>
+            </View>
+            <Text style={styles.title}>TrackLeave</Text>
+            <Text style={styles.subtitle}>Sign in to manage your leave</Text>
+          </View>
+
+          <View style={styles.form}>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Email Address</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your email"
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>Password</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+              />
+            </View>
+
+            <TouchableOpacity
+              style={[styles.loginButton, isLoading && styles.buttonDisabled]}
+              onPress={handleLogin}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <>
+                  <Text style={styles.loginButtonText}>Sign In</Text>
+                  <LogIn size={20} color="#fff" style={styles.loginIcon} />
+                </>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.forgotPassword}>
+              <Text style={styles.forgotPasswordText}>
+                Forgot Password? Contact Admin
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -117,13 +141,45 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
   },
+  scrollContent: {
+    flexGrow: 1,
+  },
   content: {
     flex: 1,
     padding: 24,
-    justifyContent: "center",
+    paddingTop: 60,
+  },
+  backButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 40,
+  },
+  backText: {
+    fontSize: 14,
+    color: colors.neutral.base,
+    marginLeft: 4,
+    fontWeight: "500",
   },
   header: {
     marginBottom: 40,
+  },
+  tenantBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: colors.neutral.light,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    alignSelf: "flex-start",
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  tenantName: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.secondary,
+    marginLeft: 6,
   },
   title: {
     fontSize: 32,
@@ -154,11 +210,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     fontSize: 16,
     backgroundColor: "#F8FAFC",
+    color: colors.text.main,
   },
   loginButton: {
     height: 52,
     backgroundColor: colors.secondary,
     borderRadius: 12,
+    flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     marginTop: 12,
@@ -168,10 +226,16 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
   loginButtonText: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "700",
+  },
+  loginIcon: {
+    marginLeft: 8,
   },
   forgotPassword: {
     alignItems: "center",

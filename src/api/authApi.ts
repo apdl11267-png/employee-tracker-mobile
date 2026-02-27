@@ -13,6 +13,7 @@ export interface CreateEmployeePayload {
 export interface LoginPayload {
     email: string;
     password: string;
+    tenantId: string;
 }
 
 export interface ChangePasswordPayload {
@@ -22,7 +23,11 @@ export interface ChangePasswordPayload {
 
 export const login = async (payload: LoginPayload) => {
     try {
-        const response = await apiClient.post('/auth/login', payload);
+        const response = await apiClient.post('/auth/login', {
+            email: payload.email,
+            password: payload.password,
+            tenantId: payload.tenantId
+        });
         return response.data;
     } catch (error) {
         console.error("Login error:", error);

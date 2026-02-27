@@ -1,6 +1,7 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useAuth } from "./context/AuthContext";
+import { useTenant } from "./context/TenantContext";
 import LoginScreen from "./screens/LoginScreen";
 import HomeScreen from "./screens/HomeScreen";
 import LeaveHistoryScreen from "./screens/LeaveHistoryScreen";
@@ -10,14 +11,18 @@ import CreateEmployeeScreen from "./screens/CreateEmployeeScreen";
 import EmployeeListScreen from "./screens/EmployeeListScreen";
 import EditEmployeeScreen from "./screens/EditEmployeeScreen";
 import EmployeeDetailsScreen from "./screens/EmployeeDetailsScreen";
+import FindOrganizationScreen from "./screens/FindOrganizationScreen";
+import RegisterOrganizationScreen from "./screens/RegisterOrganizationScreen";
 
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { currentTenant, isLoadingTenant } = useTenant();
+
   const isAdmin = user?.role === "ADMIN" || user?.role === "HR_ADMIN";
 
-  if (loading) return null;
+  if (authLoading || isLoadingTenant) return null;
 
   return (
     <Stack.Navigator
@@ -26,7 +31,23 @@ export default function AppNavigator() {
         contentStyle: { backgroundColor: "#fff" },
       }}
     >
-      {user ? (
+      {!currentTenant ? (
+        // Phase 1: Organization Discovery
+        <>
+          <Stack.Screen
+            name="FindOrganization"
+            component={FindOrganizationScreen}
+          />
+          <Stack.Screen
+            name="RegisterOrganization"
+            component={RegisterOrganizationScreen}
+          />
+        </>
+      ) : !user ? (
+        // Phase 2: User Login (Scoped to Tenant)
+        <Stack.Screen name="Login" component={LoginScreen} />
+      ) : (
+        // Phase 3: Authenticated App
         <>
           <Stack.Screen name="Home" component={HomeScreen} />
           <Stack.Screen name="LeaveHistory" component={LeaveHistoryScreen} />
@@ -57,8 +78,6 @@ export default function AppNavigator() {
             </>
           )}
         </>
-      ) : (
-        <Stack.Screen name="Login" component={LoginScreen} />
       )}
     </Stack.Navigator>
   );
