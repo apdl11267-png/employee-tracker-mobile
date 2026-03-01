@@ -125,7 +125,7 @@ export default function LeaveDetailsScreen({ route, navigation }: any) {
             </Text>
           </View>
           <Text style={styles.categoryTitle}>
-            {leave.leaveDetails.category}
+            {leave.leaveDetails?.category}
           </Text>
           <Text style={styles.appId}>ID: {leave.applicationId}</Text>
 

@@ -181,11 +181,10 @@ export default function HomeScreen({ navigation }: any) {
           <Text style={styles.loadingText}>Loading requests...</Text>
         ) : recentLeaves.length > 0 ? (
           recentLeaves.map((leave: any) => {
-            const firstDate = leave.timeline?.[0]?.dateIso;
-            const lastDate =
-              leave.timeline?.[leave.timeline.length - 1]?.dateIso;
+            const firstDate = leave.dateIso;
+            const lastDate = leave.dateIso;
             const dateRange =
-              leave.timeline.length > 1
+              leave > 1
                 ? `${format(parseISO(firstDate), "MMM dd")} - ${format(parseISO(lastDate), "MMM dd")}`
                 : format(parseISO(firstDate), "MMM dd, yyyy");
 
@@ -200,8 +199,7 @@ export default function HomeScreen({ navigation }: any) {
                 <View style={styles.leaveInfo}>
                   <Text style={styles.leaveDate}>{dateRange}</Text>
                   <Text style={styles.leaveType}>
-                    {leave.leaveDetails.category} •{" "}
-                    {leave.leaveDetails.totalDaysRequested} Days
+                    {leave.category} • {leave.totalDaysRequested} Days
                   </Text>
                 </View>
                 <View style={styles.statusBadge}>

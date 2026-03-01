@@ -93,7 +93,7 @@ export default function LeaveHistoryScreen({ navigation }: any) {
         <View style={styles.cardBody}>
           <View style={styles.detailsContainer}>
             <Text style={styles.categoryTitle}>
-              {item.leaveDetails.category}
+              {item?.leaveDetails?.category}
             </Text>
             <Text style={styles.daysText}>
               {dateRange}

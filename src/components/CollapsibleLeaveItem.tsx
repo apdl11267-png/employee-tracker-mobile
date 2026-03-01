@@ -157,7 +157,7 @@ export const CollapsibleLeaveItem: React.FC<Props> = ({
         <View style={styles.infoPill}>
           <Text style={styles.infoLabel}>Type: </Text>
           <Text style={styles.infoValue}>
-            {formatCategory(item.leaveDetails.category) ||
+            {formatCategory(item?.leaveDetails?.category) ||
               item.requestType.toUpperCase()}
           </Text>
         </View>

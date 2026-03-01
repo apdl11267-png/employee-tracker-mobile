@@ -27,20 +27,6 @@ const FindOrganizationScreen = ({ navigation }: any) => {
       return;
     }
 
-    try {
-      const response = await fetch(
-        `${BASE_URL}/tenants/search?slug=${slug.toLowerCase().trim()}`,
-        {
-          method: "GET",
-          headers: { Accept: "application/json" },
-        },
-      );
-      alert("Connected! Status: " + response.status);
-      alert("Connected! body: " + response.body);
-    } catch (error: any) {
-      alert("Connection Error: " + error.message);
-    }
-
     setLoading(true);
     setError(null);
 

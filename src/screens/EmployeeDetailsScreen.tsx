@@ -77,7 +77,7 @@ export default function EmployeeDetailsScreen({ route, navigation }: any) {
         <View style={styles.leaveInfo}>
           <Text style={styles.leaveDate}>{dateRange}</Text>
           <Text style={styles.leaveType}>
-            {item.leaveDetails.category} •{" "}
+            {item.leaveDetails?.category} •{" "}
             {item.leaveDetails.totalDaysRequested} Days
           </Text>
         </View>

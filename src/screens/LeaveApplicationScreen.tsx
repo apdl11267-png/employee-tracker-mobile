@@ -150,6 +150,7 @@ export default function LeaveApplicationScreen({ navigation }: any) {
     };
 
     mutation.mutate(payload);
+    setHasSubmitted(true);
   };
 
   const handleRemoveDate = (dateIso: string) => {
