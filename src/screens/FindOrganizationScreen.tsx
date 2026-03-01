@@ -13,6 +13,7 @@ import { useTenant } from "../context/TenantContext";
 import { colors } from "../theme/colors";
 import { Search, Building2, ArrowRight } from "lucide-react-native";
 import { tenantSearch } from "../api/tenantApi";
+import { BASE_URL } from "../api/apiClient";
 
 const FindOrganizationScreen = ({ navigation }: any) => {
   const [slug, setSlug] = useState("");
@@ -26,15 +27,25 @@ const FindOrganizationScreen = ({ navigation }: any) => {
       return;
     }
 
+    try {
+      const response = await fetch(
+        `${BASE_URL}/tenants/search?slug=${slug.toLowerCase().trim()}`,
+        {
+          method: "GET",
+          headers: { Accept: "application/json" },
+        },
+      );
+      alert("Connected! Status: " + response.status);
+      alert("Connected! body: " + response.body);
+    } catch (error: any) {
+      alert("Connection Error: " + error.message);
+    }
+
     setLoading(true);
     setError(null);
 
     try {
       const tenantData = await tenantSearch(slug);
-
-      console.log({
-        tenantData,
-      });
 
       await setTenant({
         id: tenantData.id,

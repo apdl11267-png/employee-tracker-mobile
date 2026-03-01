@@ -21,10 +21,26 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anjanpdl.mobile",
+      "permissions": [
+        "INTERNET"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/bf38523c-d5cf-467b-9597-ecf92725e065"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "bf38523c-d5cf-467b-9597-ecf92725e065"
+      }
+    },
+    "owner": "anjanpdl"
   }
 }
