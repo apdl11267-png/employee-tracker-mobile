@@ -93,7 +93,8 @@ const RegisterOrganizationScreen = ({ navigation }: any) => {
             </View>
             <Text style={styles.title}>New Organization</Text>
             <Text style={styles.subtitle}>
-              Register your organization to start tracking leaves
+              Register your organization to start tracking your employees
+              leaves/WFH
             </Text>
           </View>
 
