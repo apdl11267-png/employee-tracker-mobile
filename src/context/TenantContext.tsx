@@ -10,6 +10,7 @@ export interface Tenant {
     secondaryColor?: string;
     logoUrl?: string;
   };
+  statsResetDate: Date;
 }
 
 interface TenantContextData {

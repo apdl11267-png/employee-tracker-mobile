@@ -28,40 +28,72 @@ export interface LeaveSummary {
     hasPendingLeaves: boolean;
 }
 
-export interface LeaveDetail {
+export type Status = 'pending' | 'approved' | 'rejected';
+export type RequestType = 'leave' | 'wfh';
+export type DayType = 'full' | 'half';
+
+export interface Employee {
     _id: string;
-    applicationId: string;
-    requestType: string;
-    status: 'pending' | 'approved' | 'rejected' | 'cancelled';
-    leaveDetails: {
-        category: string;
-        totalDaysRequested: number;
-        paidDaysCount: number;
-        unpaidDaysCount: number;
-    };
-    approvalWorkflow: {
-        currentPendingApproverRole: string;
-        history: {
-            approverId: string;
-            approverRole: string;
-            status: string;
-            message: string;
-            timestamp: string;
-        }[];
-    };
-    timeline: LeaveTimelineEntry[];
+    displayName: string;
+    email: string;
+    department: string;
+}
+
+export interface LeaveDetails {
+    category: string; // e.g., "Leave"
+    totalDaysRequested: number;
+    paidDaysCount: number;
+    unpaidDaysCount: number;
+}
+
+export interface ApprovalHistory {
+    approverId: string;
+    approverRole: string;
+    status: Status;
+    message: string;
+    timestamp: string; // ISO Date String
+}
+
+export interface ApprovalWorkflow {
+    currentPendingApproverRole: string;
+    history: ApprovalHistory[];
+    notifiedRoles: string[];
+}
+
+export interface TimelineEntry {
+    _id: string;
+    employee: string; // Employee ID
+    leaveApplication: string; // Parent Application ID
+    requestType: RequestType;
+    dateIso: string; // e.g., "2026-03-07"
+    dayType: DayType;
+    isPaid: boolean;
+    status: Status;
+    deductionValue: number;
+    tenantId: string;
+    __v: number;
     createdAt: string;
     updatedAt: string;
 }
 
+export interface LeaveApplication {
+    _id: string;
+    applicationId: string;
+    status: Status;
+    requestType: RequestType;
+    employee: Employee;
+    leaveDetails: LeaveDetails;
+    approvalWorkflow: ApprovalWorkflow;
+    createdAt: string;
+    updatedAt: string;
+    timeline: TimelineEntry[];
+}
+
 export interface LeaveResponse {
     success: boolean;
-    data: {
-        summary: LeaveSummary;
-        leaveDetails: LeaveDetail[];
-        workFromHomeDetails: any[];
-    };
+    data: LeaveApplication[];
 }
+
 
 export const applyForLeave = async (payload: LeaveRequestPayload) => {
     const response = await apiClient.post('/leaves', payload);
@@ -74,8 +106,14 @@ export const getMyLeaves = async (startDate?: string, endDate?: string) => {
     return response.data;
 };
 
+export const getMySummary = async (startDate?: string, endDate?: string) => {
+    const params = { startDate, endDate };
+    const response = await apiClient.get<{ success: boolean; data: { summary: LeaveSummary } }>('/leaves/my/summary', { params });
+    return response.data;
+};
+
 export const getAllLeavesForAdmin = async (filters?: { status?: string; requestType?: string }) => {
-    const response = await apiClient.get('/leaves/all', { params: filters });
+    const response = await apiClient.get<LeaveResponse>('/leaves/all', { params: filters });
     return response.data;
 };
 
@@ -85,7 +123,7 @@ export const updateLeaveStatus = async (id: string, payload: { status: string; m
 };
 
 export const getLeaveById = async (id: string) => {
-    const response = await apiClient.get<{ success: boolean; data: LeaveDetail }>(`/leaves/${id}`);
+    const response = await apiClient.get<{ success: boolean; data: LeaveApplication }>(`/leaves/${id}`);
     return response.data;
 };
 

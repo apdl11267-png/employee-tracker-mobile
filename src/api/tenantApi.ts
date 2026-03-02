@@ -10,6 +10,7 @@ export interface TenantData {
         accentColor: string;
         fontFamily: string;
     };
+    statsResetDate: Date;
 };
 
 
@@ -22,7 +23,7 @@ export const tenantSearch = async (slug: string): Promise<TenantData> => {
 };
 
 
-export const tenantCreate = async (name: string, slug: string): Promise<TenantData> => {
+export const tenantCreate = async (name: string, slug: string, statsResetDate: string): Promise<TenantData> => {
     // console.log("Creating organization...", name, slug);
     const response = await apiClient.post("/tenants", {
         name: name.trim(),
@@ -33,6 +34,7 @@ export const tenantCreate = async (name: string, slug: string): Promise<TenantDa
             accentColor: "#f59e0b",
             fontFamily: "Inter",
         },
+        statsResetDate,
     });
 
     return response.data.data;

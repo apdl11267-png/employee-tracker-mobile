@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import {
   addMonths,
@@ -7,7 +7,6 @@ import {
   subMonths,
   eachDayOfInterval,
   endOfMonth,
-  isSameMonth,
   isSameDay,
 } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
@@ -16,21 +15,50 @@ import { colors } from "../theme/colors";
 interface CustomCalendarProps {
   selectedDates: string[]; // ISO strings
   onDateSelect: (dateIso: string) => void;
+  defaultDate?: Date;
+  showTitle?: ("year" | "month")[];
 }
 
 export const CustomCalendar: React.FC<CustomCalendarProps> = ({
   selectedDates,
   onDateSelect,
+  defaultDate,
+  showTitle = ["month", "year"],
 }) => {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(defaultDate || new Date());
 
-  const daysInMonth = eachDayOfInterval({
-    start: startOfMonth(currentMonth),
-    end: endOfMonth(currentMonth),
-  });
+  console.log({ selectedDates });
 
-  const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
-  const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
+  // const daysInMonth = eachDayOfInterval({
+  //   start: startOfMonth(currentMonth),
+  //   end: endOfMonth(currentMonth),
+  // });
+
+  // const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
+  // const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
+
+  // 1. Memoize the days array so it only recalculates when the month changes
+  const { daysInMonth, emptyDaysPrefix } = useMemo(() => {
+    const start = startOfMonth(currentMonth);
+    const end = endOfMonth(currentMonth);
+
+    return {
+      daysInMonth: eachDayOfInterval({ start, end }),
+      emptyDaysPrefix: start.getDay(),
+    };
+  }, [currentMonth]);
+
+  // 2. Memoize navigation to prevent unnecessary function recreation
+  const nextMonth = useCallback(
+    () => setCurrentMonth((prev) => addMonths(prev, -1)),
+    [],
+  );
+  const prevMonth = useCallback(
+    () => setCurrentMonth((prev) => subMonths(prev, 1)),
+    [],
+  );
+
+  console.log({ selectedDates });
 
   return (
     <View style={styles.container}>
@@ -39,7 +67,8 @@ export const CustomCalendar: React.FC<CustomCalendarProps> = ({
           <ChevronLeft color={colors.primary} size={24} />
         </TouchableOpacity>
         <Text style={styles.monthText}>
-          {format(currentMonth, "MMMM yyyy")}
+          {showTitle?.includes("month") && format(currentMonth, "MMMM")}{" "}
+          {showTitle?.includes("year") && format(currentMonth, "yyyy")}
         </Text>
         <TouchableOpacity onPress={nextMonth} style={styles.navButton}>
           <ChevronRight color={colors.primary} size={24} />

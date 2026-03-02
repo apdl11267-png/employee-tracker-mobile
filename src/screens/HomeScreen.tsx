@@ -28,7 +28,7 @@ import {
   Shield,
   Settings,
 } from "lucide-react-native";
-import { getMyLeaves } from "../api/leaveApi";
+import { getMyLeaves, getMySummary } from "../api/leaveApi";
 import { useAuth } from "../context/AuthContext";
 import { colors } from "../theme/colors";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -67,8 +67,18 @@ export default function HomeScreen({ navigation }: any) {
     queryFn: () => getMyLeaves(startDate, endDate),
   });
 
-  const summary = data?.data?.summary;
-  const recentLeaves = data?.data?.leaveDetails?.slice(0, 5) || [];
+  const {
+    data: summaryData,
+    isLoading: summaryLoading,
+    refetch: summaryRefetch,
+    isRefetching: summaryIsRefetching,
+  } = useQuery({
+    queryKey: ["summary", startDate, endDate],
+    queryFn: () => getMySummary(startDate, endDate),
+  });
+
+  const summary = summaryData?.data?.summary;
+  const recentLeaves = data?.data?.slice(0, 5) || [];
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -114,7 +124,13 @@ export default function HomeScreen({ navigation }: any) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl refreshing={isRefetching} onRefresh={refetch} />
+          <RefreshControl
+            refreshing={isRefetching && summaryIsRefetching}
+            onRefresh={() => {
+              refetch();
+              summaryRefetch();
+            }}
+          />
         }
       >
         <View style={styles.statsGrid}>
@@ -180,11 +196,12 @@ export default function HomeScreen({ navigation }: any) {
         {isLoading ? (
           <Text style={styles.loadingText}>Loading requests...</Text>
         ) : recentLeaves.length > 0 ? (
-          recentLeaves.map((leave: any) => {
-            const firstDate = leave.dateIso;
-            const lastDate = leave.dateIso;
+          recentLeaves.map((leave) => {
+            const firstDate = leave.timeline?.[0]?.dateIso;
+            const lastDate =
+              leave.timeline?.[leave.timeline.length - 1]?.dateIso;
             const dateRange =
-              leave > 1
+              leave.timeline.length > 1
                 ? `${format(parseISO(firstDate), "MMM dd")} - ${format(parseISO(lastDate), "MMM dd")}`
                 : format(parseISO(firstDate), "MMM dd, yyyy");
 
@@ -199,7 +216,8 @@ export default function HomeScreen({ navigation }: any) {
                 <View style={styles.leaveInfo}>
                   <Text style={styles.leaveDate}>{dateRange}</Text>
                   <Text style={styles.leaveType}>
-                    {leave.category} • {leave.totalDaysRequested} Days
+                    {leave.leaveDetails.category} •{" "}
+                    {leave.leaveDetails.totalDaysRequested} Days
                   </Text>
                 </View>
                 <View style={styles.statusBadge}>

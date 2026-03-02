@@ -1,21 +1,20 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  SafeAreaView,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from "react-native";
 import { useTenant } from "../context/TenantContext";
-import apiClient from "../api/apiClient";
 import { colors } from "../theme/colors";
 import { Building2, Plus, ArrowLeft } from "lucide-react-native";
 import { tenantCreate } from "../api/tenantApi";
+import { CustomCalendar } from "../components/CustomCalendar";
 
 const RegisterOrganizationScreen = ({ navigation }: any) => {
   const [name, setName] = useState("");
@@ -23,6 +22,10 @@ const RegisterOrganizationScreen = ({ navigation }: any) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { setTenant } = useTenant();
+  const [selectedDate, setSelectedDate] = useState<string>(
+    new Date(new Date().getFullYear(), 0, 1).toLocaleDateString("en-CA"),
+  );
+  const selectedDatesArray = useMemo(() => [selectedDate], [selectedDate]);
 
   const handleCreate = async () => {
     if (!name.trim() || !slug.trim()) {
@@ -39,13 +42,14 @@ const RegisterOrganizationScreen = ({ navigation }: any) => {
     setError(null);
 
     try {
-      const tenantData = await tenantCreate(name, slug);
+      const tenantData = await tenantCreate(name, slug, selectedDate);
 
       await setTenant({
         id: tenantData.id,
         name: tenantData.name,
         slug: tenantData.slug,
         themeConfig: tenantData.themeConfig,
+        statsResetDate: new Date(tenantData.statsResetDate),
       });
 
       // Navigation will be handled by the navigator
@@ -60,8 +64,12 @@ const RegisterOrganizationScreen = ({ navigation }: any) => {
     }
   };
 
+  const handleDateSelect = (dateIso: string) => {
+    setSelectedDate(dateIso);
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.flex}
@@ -123,6 +131,20 @@ const RegisterOrganizationScreen = ({ navigation }: any) => {
 
             {error && <Text style={styles.errorText}>{error}</Text>}
 
+            <View>
+              <Text style={styles.label}>Stats Reset Date</Text>
+              <Text style={styles.helpText}>
+                (Leave/Stats will be reset on this date. Recommended date is Jan
+                1st to reset the Employees's leaves in Jan 1.)
+              </Text>
+              <CustomCalendar
+                selectedDates={selectedDatesArray}
+                onDateSelect={handleDateSelect}
+                defaultDate={new Date(new Date().getFullYear(), 0, 1)}
+                showTitle={["month"]}
+              />
+            </View>
+
             <TouchableOpacity
               style={[styles.button, loading && styles.buttonDisabled]}
               onPress={handleCreate}
@@ -137,7 +159,7 @@ const RegisterOrganizationScreen = ({ navigation }: any) => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 };
 
