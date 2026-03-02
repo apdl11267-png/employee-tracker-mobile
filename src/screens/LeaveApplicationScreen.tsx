@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { BottomSheetModal } from "@gorhom/bottom-sheet";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { CustomCalendar } from "../components/CustomCalendar";
 import { AlertService } from "../components/AlertService";
 import {
@@ -28,6 +28,7 @@ import { useAuth } from "../context/AuthContext";
 type RequestType = "leave" | "wfh";
 
 export default function LeaveApplicationScreen({ navigation }: any) {
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
   const [requestType, setRequestType] = useState<RequestType>("leave");
@@ -63,6 +64,8 @@ export default function LeaveApplicationScreen({ navigation }: any) {
     onSuccess: () => {
       setHasSubmitted(true);
       setSelectedDatesMap({}); // Reset first to clear the listener condition
+      queryClient.invalidateQueries({ queryKey: ["leaves"] });
+      queryClient.invalidateQueries({ queryKey: ["summary"] });
       AlertService.success(
         "Success",
         `${requestType === "wfh" ? "WFH" : "Leave"} application submitted successfully.`,

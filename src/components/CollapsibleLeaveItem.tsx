@@ -7,6 +7,7 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  ActivityIndicator,
 } from "react-native";
 import { format, parseISO } from "date-fns";
 import {
@@ -63,12 +64,14 @@ interface Props {
   item: LeaveApplication;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
+  isProcessing?: boolean;
 }
 
 export const CollapsibleLeaveItem: React.FC<Props> = ({
   item,
   onApprove,
   onReject,
+  isProcessing,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -222,18 +225,40 @@ export const CollapsibleLeaveItem: React.FC<Props> = ({
           {item.status === "pending" && (
             <View style={styles.actionRow}>
               <TouchableOpacity
-                style={[styles.actionButton, styles.rejectButton]}
+                style={[
+                  styles.actionButton,
+                  styles.rejectButton,
+                  isProcessing && styles.disabledButton,
+                ]}
                 onPress={() => onReject(item._id)}
+                disabled={isProcessing}
               >
-                <X size={18} color="#fff" />
-                <Text style={styles.actionButtonText}>Reject</Text>
+                {isProcessing ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <>
+                    <X size={18} color="#fff" />
+                    <Text style={styles.actionButtonText}>Reject</Text>
+                  </>
+                )}
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.actionButton, styles.approveButton]}
+                style={[
+                  styles.actionButton,
+                  styles.approveButton,
+                  isProcessing && styles.disabledButton,
+                ]}
                 onPress={() => onApprove(item._id)}
+                disabled={isProcessing}
               >
-                <Check size={18} color="#fff" />
-                <Text style={styles.actionButtonText}>Approve</Text>
+                {isProcessing ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <>
+                    <Check size={18} color="#fff" />
+                    <Text style={styles.actionButtonText}>Approve</Text>
+                  </>
+                )}
               </TouchableOpacity>
             </View>
           )}
@@ -436,6 +461,9 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "700",
     fontSize: 14,
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
   footerInfo: {
     flexDirection: "row",

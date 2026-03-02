@@ -163,7 +163,7 @@ export default function HomeScreen({ navigation }: any) {
                 onPress={() => navigation.navigate("AdminDashboard")}
               >
                 <Shield size={24} color={colors.primary} />
-                <Text style={styles.adminCardText}>Manage Leaves</Text>
+                <Text style={styles.adminCardText}>Manage Leaves/WFH</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.adminCard}

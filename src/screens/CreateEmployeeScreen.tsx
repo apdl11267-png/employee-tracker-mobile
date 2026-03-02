@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   Pressable,
 } from "react-native";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createEmployee, CreateEmployeePayload } from "../api/authApi";
 import { colors } from "../theme/colors";
 import { AlertService } from "../components/AlertService";
@@ -25,6 +25,7 @@ import {
 import { Lock } from "lucide-react-native/icons";
 
 export default function CreateEmployeeScreen({ navigation }: any) {
+  const queryClient = useQueryClient();
   const [form, setForm] = useState<CreateEmployeePayload>({
     displayName: "",
     email: "",
@@ -39,6 +40,7 @@ export default function CreateEmployeeScreen({ navigation }: any) {
   const mutation = useMutation({
     mutationFn: createEmployee,
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
       AlertService.success("Success", "Employee created successfully.");
       navigation.goBack();
     },
@@ -80,7 +82,7 @@ export default function CreateEmployeeScreen({ navigation }: any) {
             <UserPlus size={20} color={colors.neutral.base} />
             <TextInput
               style={styles.input}
-              placeholder="System Admin"
+              placeholder="user name"
               value={form.displayName}
               onChangeText={(t) => setForm({ ...form, displayName: t })}
             />
@@ -93,7 +95,7 @@ export default function CreateEmployeeScreen({ navigation }: any) {
             <Mail size={20} color={colors.neutral.base} />
             <TextInput
               style={styles.input}
-              placeholder="admin@example.com"
+              placeholder="admin@yourcompany.com"
               keyboardType="email-address"
               autoCapitalize="none"
               value={form.email}
@@ -103,7 +105,9 @@ export default function CreateEmployeeScreen({ navigation }: any) {
         </View>
 
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Password</Text>
+          <Text style={styles.label}>
+            Password <Text style={styles.subText}>(Choose a new password)</Text>
+          </Text>
           <View style={styles.inputWrapper}>
             <Lock size={20} color={colors.neutral.base} />
 
@@ -317,5 +321,10 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "700",
+  },
+  subText: {
+    fontSize: 12,
+    fontWeight: "400",
+    color: colors.text.muted,
   },
 });

@@ -131,7 +131,7 @@ export const GlobalToast = forwardRef((props, ref) => {
 const styles = StyleSheet.create({
   toastContainer: {
     position: "absolute",
-    bottom: 100,
+    top: 10,
     left: "5%",
     right: "5%",
     width: "90%",

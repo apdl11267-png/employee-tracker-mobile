@@ -36,8 +36,19 @@ export default function AdminDashboardScreen({ navigation }: any) {
         approverRole: currentUser?.role || "ADMIN",
         message: `Processed by ${currentUser?.displayName}`,
       }),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      // Manually update cache to remove the item immediately
+      queryClient.setQueryData(["allLeaves", filter], (oldData: any) => {
+        if (!oldData || !oldData.data) return oldData;
+        return {
+          ...oldData,
+          data: oldData.data.filter((leave: any) => leave._id !== variables.id),
+        };
+      });
+
       queryClient.invalidateQueries({ queryKey: ["allLeaves"] });
+      queryClient.invalidateQueries({ queryKey: ["leaves"] });
+      queryClient.invalidateQueries({ queryKey: ["summary"] });
       AlertService.toast({
         message: "Status updated successfully.",
         type: "success",
@@ -61,6 +72,7 @@ export default function AdminDashboardScreen({ navigation }: any) {
       item={item}
       onApprove={(id) => handleStatusUpdate(id, "approved")}
       onReject={(id) => handleStatusUpdate(id, "rejected")}
+      isProcessing={mutation.isPending && mutation.variables?.id === item._id}
     />
   );
 
