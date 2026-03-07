@@ -15,3 +15,10 @@ export const getAdminStats = async (): Promise<{ success: boolean; data: AdminSt
     const response = await apiClient.get('/admin/stats');
     return response.data;
 };
+
+export const downloadAdminReport = async (): Promise<string> => {
+    const response = await apiClient.get('/admin/report/download', {
+        responseType: 'text'
+    });
+    return response.data;
+};

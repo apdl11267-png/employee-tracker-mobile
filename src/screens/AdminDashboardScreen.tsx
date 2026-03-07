@@ -12,9 +12,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getAllLeavesForAdmin, updateLeaveStatus } from "../api/leaveApi";
 import { colors } from "../theme/colors";
 import { AlertService } from "../components/AlertService";
-import { Clock, ChevronLeft } from "lucide-react-native";
 import { useAuth } from "../context/AuthContext";
 import { CollapsibleLeaveItem } from "../components/CollapsibleLeaveItem";
+import { downloadAdminReport } from "../api/adminApi";
+import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
+import { Download, Clock, ChevronLeft } from "lucide-react-native";
+import { format } from "date-fns";
 
 export default function AdminDashboardScreen({ navigation }: any) {
   const { user: currentUser } = useAuth();
@@ -79,6 +83,40 @@ export default function AdminDashboardScreen({ navigation }: any) {
     );
   };
 
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownloadReport = async () => {
+    try {
+      setIsDownloading(true);
+      const data = await downloadAdminReport();
+
+      if (!data) {
+        throw new Error("No data received from server");
+      }
+
+      const filename = `report_${format(new Date(), "yyyy-MM-dd")}.csv`;
+      const fileUri = (FileSystem.documentDirectory || "") + filename;
+
+      await FileSystem.writeAsStringAsync(fileUri, data, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(fileUri);
+      } else {
+        AlertService.toast({
+          message: "Sharing is not available on this device",
+          type: "error",
+        });
+      }
+    } catch (error: any) {
+      console.error("Download Error:", error);
+      AlertService.error(error, "Download failed");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
+
   const renderItem = ({ item }: { item: any }) => (
     <CollapsibleLeaveItem
       item={item}
@@ -87,17 +125,6 @@ export default function AdminDashboardScreen({ navigation }: any) {
       isProcessing={mutation.isPending && mutation.variables?.id === item._id}
     />
   );
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "approved":
-        return colors.status.approved;
-      case "rejected":
-        return colors.status.rejected;
-      default:
-        return colors.status.pending;
-    }
-  };
 
   return (
     <View style={styles.container}>
@@ -109,7 +136,17 @@ export default function AdminDashboardScreen({ navigation }: any) {
           <ChevronLeft size={28} color={colors.primary} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Leave Management</Text>
-        <View style={{ width: 28 }} />
+        <TouchableOpacity
+          onPress={handleDownloadReport}
+          disabled={isDownloading}
+          style={styles.downloadButton}
+        >
+          {isDownloading ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <Download size={24} color={colors.primary} />
+          )}
+        </TouchableOpacity>
       </View>
 
       <View style={styles.filterRow}>
@@ -177,6 +214,11 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "800",
     color: colors.primary,
+    flex: 1,
+    textAlign: "center",
+  },
+  downloadButton: {
+    padding: 4,
   },
   filterRow: {
     flexDirection: "row",
@@ -204,99 +246,6 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     padding: 16,
-  },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 16,
-  },
-  userInfo: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  userIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.neutral.light,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: colors.text.main,
-  },
-  userDept: {
-    fontSize: 12,
-    color: colors.text.muted,
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  statusText: {
-    fontSize: 10,
-    fontWeight: "800",
-  },
-  cardBody: {
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: colors.neutral.light,
-  },
-  detailRow: {
-    flexDirection: "row",
-    justifyContent: "flex-start",
-    marginBottom: 8,
-    gap: 8,
-  },
-  detailLabel: {
-    fontSize: 14,
-    color: colors.text.muted,
-  },
-  detailValue: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: colors.text.main,
-  },
-  actionRow: {
-    flexDirection: "row",
-    marginTop: 16,
-    gap: 12,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 10,
-    borderRadius: 10,
-    gap: 8,
-  },
-  approveButton: {
-    backgroundColor: colors.status.approved,
-  },
-  rejectButton: {
-    backgroundColor: colors.status.rejected,
-  },
-  actionButtonText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 14,
   },
   emptyContainer: {
     alignItems: "center",
