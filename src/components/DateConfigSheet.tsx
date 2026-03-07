@@ -465,7 +465,12 @@ const styles = StyleSheet.create({
     // This allows the scroll content to scroll underneath the fixed footer
   },
   timelineSection: {
-    padding: 20,
+    padding: 10,
+    margin: 10,
+    backgroundColor: "#eaedf7ff",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
   },
   footer: {
     position: "absolute",
@@ -479,21 +484,21 @@ const styles = StyleSheet.create({
   },
   // UI Elements
   sectionHeader: { marginBottom: 12 },
-  sectionTitle: { fontSize: 16, fontWeight: "700", color: colors.primary },
-  sectionSubtitle: { fontSize: 12, color: colors.text.muted },
+  sectionTitle: { fontSize: 18, fontWeight: "700", color: colors.primary },
+  sectionSubtitle: { fontSize: 14, color: colors.text.muted },
   label: {
-    fontSize: 12,
+    fontSize: 15,
     fontWeight: "600",
     color: colors.text.muted,
     marginBottom: 8,
     marginTop: 12,
   },
-  row: { flexDirection: "row", gap: 8 },
+  row: { flexDirection: "row", gap: 8, marginTop: 1 },
   dualColumn: { flexDirection: "column", gap: 16 },
   rowWrapper: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   pill: {
     paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     borderRadius: 20,
     backgroundColor: "#fff",
     borderWidth: 1,
@@ -512,7 +517,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.secondary,
     borderColor: colors.secondary,
   },
-  pillText: { fontSize: 11, color: colors.text.main, fontWeight: "600" },
+  pillText: { fontSize: 13, color: colors.text.main, fontWeight: "600" },
   pillTextActive: { color: "#fff" },
   accordionItem: {
     backgroundColor: "#fff",
@@ -535,8 +540,8 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: colors.secondary,
   },
-  dateMainText: { fontSize: 14, fontWeight: "700", color: colors.primary },
-  dateSubText: { fontSize: 11, color: colors.text.muted },
+  dateMainText: { fontSize: 16, fontWeight: "700", color: colors.primary },
+  dateSubText: { fontSize: 13, color: colors.text.muted },
   headerRight: { flexDirection: "row", alignItems: "center" },
   accordionContent: {
     padding: 12,
