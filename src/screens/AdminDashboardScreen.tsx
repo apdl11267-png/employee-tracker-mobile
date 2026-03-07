@@ -19,7 +19,11 @@ import { CollapsibleLeaveItem } from "../components/CollapsibleLeaveItem";
 export default function AdminDashboardScreen({ navigation }: any) {
   const { user: currentUser } = useAuth();
   const queryClient = useQueryClient();
-  const [filter, setFilter] = useState("pending");
+  const routeParams =
+    navigation.getState?.().routes.find((r: any) => r.name === "AdminDashboard")
+      ?.params || {};
+  const initialFilter = routeParams.filter || "pending";
+  const [filter, setFilter] = useState(initialFilter);
 
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ["allLeaves", filter],
@@ -29,12 +33,20 @@ export default function AdminDashboardScreen({ navigation }: any) {
   const leaves = data?.data || [];
 
   const mutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) =>
+    mutationFn: ({
+      id,
+      status,
+      message,
+    }: {
+      id: string;
+      status: string;
+      message?: string;
+    }) =>
       updateLeaveStatus(id, {
         status,
         approverId: currentUser?.id || "",
         approverRole: currentUser?.role || "ADMIN",
-        message: `Processed by ${currentUser?.displayName}`,
+        message: message || `Processed by ${currentUser?.displayName}`,
       }),
     onSuccess: (_, variables) => {
       // Manually update cache to remove the item immediately
@@ -59,19 +71,19 @@ export default function AdminDashboardScreen({ navigation }: any) {
     },
   });
 
-  const handleStatusUpdate = (id: string, status: string) => {
+  const handleStatusUpdate = (id: string, status: string, message?: string) => {
     AlertService.confirm(
       "Confirm Action",
       `Are you sure you want to ${status} this leave?`,
-      () => mutation.mutate({ id, status }),
+      () => mutation.mutate({ id, status, message }),
     );
   };
 
   const renderItem = ({ item }: { item: any }) => (
     <CollapsibleLeaveItem
       item={item}
-      onApprove={(id) => handleStatusUpdate(id, "approved")}
-      onReject={(id) => handleStatusUpdate(id, "rejected")}
+      onApprove={(id, message) => handleStatusUpdate(id, "approved", message)}
+      onReject={(id, message) => handleStatusUpdate(id, "rejected", message)}
       isProcessing={mutation.isPending && mutation.variables?.id === item._id}
     />
   );

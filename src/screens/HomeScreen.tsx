@@ -27,14 +27,23 @@ import {
   User as UserIcon,
   Shield,
   Settings,
+  Users,
+  Briefcase,
+  Monitor,
 } from "lucide-react-native";
 import { getMyLeaves, getMySummary } from "../api/leaveApi";
+import { getAdminStats } from "../api/adminApi";
 import { useAuth } from "../context/AuthContext";
 import { colors } from "../theme/colors";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const StatCard = ({ label, value, icon: Icon, color }: any) => (
-  <View style={[styles.statCard]}>
+const StatCard = ({ label, value, icon: Icon, color, onPress }: any) => (
+  <TouchableOpacity
+    style={[styles.statCard]}
+    onPress={onPress}
+    disabled={!onPress}
+    activeOpacity={0.7}
+  >
     <View style={[styles.iconContainer, { backgroundColor: `${color}15` }]}>
       <Icon size={20} color={color} />
     </View>
@@ -42,7 +51,7 @@ const StatCard = ({ label, value, icon: Icon, color }: any) => (
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statLabel}>{label}</Text>
     </View>
-  </View>
+  </TouchableOpacity>
 );
 
 export default function HomeScreen({ navigation }: any) {
@@ -75,9 +84,22 @@ export default function HomeScreen({ navigation }: any) {
   } = useQuery({
     queryKey: ["summary", startDate, endDate],
     queryFn: () => getMySummary(startDate, endDate),
+    enabled: user?.role === "EMPLOYEE",
+  });
+
+  const {
+    data: adminStatsData,
+    isLoading: adminStatsLoading,
+    refetch: adminStatsRefetch,
+    isRefetching: adminStatsIsRefetching,
+  } = useQuery({
+    queryKey: ["adminStats"],
+    queryFn: () => getAdminStats(),
+    enabled: user?.role !== "EMPLOYEE",
   });
 
   const summary = summaryData?.data?.summary;
+  const adminStats = adminStatsData?.data;
   const recentLeaves = data?.data?.slice(0, 5) || [];
 
   const getStatusColor = (status: string) => {
@@ -125,33 +147,104 @@ export default function HomeScreen({ navigation }: any) {
         contentContainerStyle={styles.scrollContent}
         refreshControl={
           <RefreshControl
-            refreshing={isRefetching && summaryIsRefetching}
+            refreshing={
+              isRefetching &&
+              (user?.role === "EMPLOYEE"
+                ? summaryIsRefetching
+                : adminStatsIsRefetching)
+            }
             onRefresh={() => {
               refetch();
-              summaryRefetch();
+              if (user?.role === "EMPLOYEE") summaryRefetch();
+              else adminStatsRefetch();
             }}
           />
         }
       >
         <View style={styles.statsGrid}>
-          <StatCard
-            label="Remaining"
-            value={summary?.totalRemainingLeaves ?? "-"}
-            icon={Calendar}
-            color={colors.secondary}
-          />
-          <StatCard
-            label="Requested"
-            value={summary?.totalLeaveRequested ?? "-"}
-            icon={Clock}
-            color={colors.status.pending}
-          />
-          <StatCard
-            label="Taken Today"
-            value={summary?.totalLeavesTaken ?? "-"}
-            icon={CheckCircle2}
-            color={colors.status.approved}
-          />
+          {user?.role === "EMPLOYEE" ? (
+            <>
+              <StatCard
+                label="Remaining"
+                value={summary?.totalRemainingLeaves ?? "-"}
+                icon={Calendar}
+                color={colors.secondary}
+              />
+              <StatCard
+                label="Requested"
+                value={summary?.totalLeaveRequested ?? "-"}
+                icon={Clock}
+                color={colors.status.pending}
+              />
+              <StatCard
+                label="Taken Today"
+                value={summary?.totalLeavesTaken ?? "-"}
+                icon={CheckCircle2}
+                color={colors.status.approved}
+              />
+            </>
+          ) : (
+            <>
+              <StatCard
+                label="Total Staff"
+                value={adminStats?.totalEmployees ?? "-"}
+                icon={Users}
+                color={colors.secondary}
+                onPress={() => navigation.navigate("EmployeeList")}
+              />
+              <StatCard
+                label="Leave Today"
+                value={adminStats?.leavesToday?.length ?? "-"}
+                icon={Briefcase}
+                color={colors.status.rejected}
+                onPress={() =>
+                  navigation.navigate("EmployeeList", {
+                    filterTitle: "On Leave Today",
+                    employees: adminStats?.leavesToday,
+                  })
+                }
+              />
+              <StatCard
+                label="WFH Today"
+                value={adminStats?.wfhToday?.length ?? "-"}
+                icon={Monitor}
+                color={colors.status.approved}
+                onPress={() =>
+                  navigation.navigate("EmployeeList", {
+                    filterTitle: "On WFH Today",
+                    employees: adminStats?.wfhToday,
+                  })
+                }
+              />
+              <StatCard
+                label="Pending"
+                value={adminStats?.statsMonth?.pending ?? "-"}
+                icon={Clock}
+                color={colors.status.pending}
+                onPress={() =>
+                  navigation.navigate("AdminDashboard", { filter: "pending" })
+                }
+              />
+              <StatCard
+                label="Approved"
+                value={adminStats?.statsMonth?.approved ?? "-"}
+                icon={CheckCircle2}
+                color={colors.status.approved}
+                onPress={() =>
+                  navigation.navigate("AdminDashboard", { filter: "approved" })
+                }
+              />
+              <StatCard
+                label="Rejected"
+                value={adminStats?.statsMonth?.rejected ?? "-"}
+                icon={XCircle}
+                color={colors.status.rejected}
+                onPress={() =>
+                  navigation.navigate("AdminDashboard", { filter: "rejected" })
+                }
+              />
+            </>
+          )}
         </View>
 
         {user?.role !== "EMPLOYEE" && (
@@ -314,6 +407,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 3,
+    margin: 2,
   },
   iconContainer: {
     width: 36,

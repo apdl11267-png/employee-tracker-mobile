@@ -25,15 +25,31 @@ import { SafeAreaView } from "react-native-safe-area-context";
 export default function EmployeeListScreen({ navigation }: any) {
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data, isLoading, refetch, isRefetching } = useQuery({
+  const {
+    data: allEmployees,
+    isLoading,
+    refetch,
+    isRefetching,
+  } = useQuery({
     queryKey: ["employees"],
     queryFn: () => employeeApi.getAllEmployees(),
+    enabled:
+      !navigation.getParam?.("employees") &&
+      !navigation
+        .getState?.()
+        .routes.find((r: any) => r.name === "EmployeeList")?.params?.employees,
   });
 
-  const employees = data || [];
+  const routeParams =
+    navigation.getState?.().routes.find((r: any) => r.name === "EmployeeList")
+      ?.params || {};
+  const passedEmployees = routeParams.employees;
+  const filterTitle = routeParams.filterTitle;
+
+  const employees = passedEmployees || allEmployees || [];
 
   const filteredEmployees = employees.filter(
-    (emp) =>
+    (emp: EmployeeData) =>
       emp.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       emp.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       emp.department.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -96,7 +112,7 @@ export default function EmployeeListScreen({ navigation }: any) {
         >
           <ChevronLeft size={28} color={colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Employees</Text>
+        <Text style={styles.headerTitle}>{filterTitle || "Employees"}</Text>
         <View style={{ width: 28 }} />
       </View>
 

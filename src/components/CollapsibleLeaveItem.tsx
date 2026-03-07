@@ -8,6 +8,7 @@ import {
   Platform,
   UIManager,
   ActivityIndicator,
+  TextInput,
 } from "react-native";
 import { format, parseISO } from "date-fns";
 import {
@@ -62,8 +63,8 @@ interface LeaveApplication {
 
 interface Props {
   item: LeaveApplication;
-  onApprove: (id: string) => void;
-  onReject: (id: string) => void;
+  onApprove: (id: string, message?: string) => void;
+  onReject: (id: string, message?: string) => void;
   isProcessing?: boolean;
 }
 
@@ -74,6 +75,7 @@ export const CollapsibleLeaveItem: React.FC<Props> = ({
   isProcessing,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [adminMessage, setAdminMessage] = useState("");
 
   const toggleExpand = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -223,43 +225,52 @@ export const CollapsibleLeaveItem: React.FC<Props> = ({
           </View>
 
           {item.status === "pending" && (
-            <View style={styles.actionRow}>
-              <TouchableOpacity
-                style={[
-                  styles.actionButton,
-                  styles.rejectButton,
-                  isProcessing && styles.disabledButton,
-                ]}
-                onPress={() => onReject(item._id)}
-                disabled={isProcessing}
-              >
-                {isProcessing ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <>
-                    <X size={18} color="#fff" />
-                    <Text style={styles.actionButtonText}>Reject</Text>
-                  </>
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.actionButton,
-                  styles.approveButton,
-                  isProcessing && styles.disabledButton,
-                ]}
-                onPress={() => onApprove(item._id)}
-                disabled={isProcessing}
-              >
-                {isProcessing ? (
-                  <ActivityIndicator size="small" color="#fff" />
-                ) : (
-                  <>
-                    <Check size={18} color="#fff" />
-                    <Text style={styles.actionButtonText}>Approve</Text>
-                  </>
-                )}
-              </TouchableOpacity>
+            <View>
+              <TextInput
+                style={styles.messageInput}
+                placeholder="Add a message for the employee (optional)..."
+                value={adminMessage}
+                onChangeText={setAdminMessage}
+                multiline
+              />
+              <View style={styles.actionRow}>
+                <TouchableOpacity
+                  style={[
+                    styles.actionButton,
+                    styles.rejectButton,
+                    isProcessing && styles.disabledButton,
+                  ]}
+                  onPress={() => onReject(item._id, adminMessage)}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <>
+                      <X size={18} color="#fff" />
+                      <Text style={styles.actionButtonText}>Reject</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.actionButton,
+                    styles.approveButton,
+                    isProcessing && styles.disabledButton,
+                  ]}
+                  onPress={() => onApprove(item._id, adminMessage)}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <>
+                      <Check size={18} color="#fff" />
+                      <Text style={styles.actionButtonText}>Approve</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
           )}
 
@@ -476,5 +487,17 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: colors.neutral.base,
     fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+  },
+  messageInput: {
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 14,
+    color: colors.text.main,
+    marginTop: 16,
+    minHeight: 80,
+    textAlignVertical: "top",
   },
 });
