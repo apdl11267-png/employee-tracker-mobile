@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   StatusBar,
   Alert,
   RefreshControl,
+  ActivityIndicator,
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -32,10 +33,14 @@ import {
   Monitor,
 } from "lucide-react-native";
 import { getMyLeaves, getMySummary } from "../api/leaveApi";
-import { getAdminStats } from "../api/adminApi";
+import { getAdminStats, downloadAdminReport } from "../api/adminApi";
 import { useAuth } from "../context/AuthContext";
 import { colors } from "../theme/colors";
 import { SafeAreaView } from "react-native-safe-area-context";
+import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
+import { Download } from "lucide-react-native";
+import { AlertService } from "../components/AlertService";
 
 const StatCard = ({ label, value, icon: Icon, color, onPress }: any) => (
   <TouchableOpacity
@@ -56,6 +61,39 @@ const StatCard = ({ label, value, icon: Icon, color, onPress }: any) => (
 
 export default function HomeScreen({ navigation }: any) {
   const { user, signOut } = useAuth();
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleDownloadReport = async () => {
+    try {
+      setIsDownloading(true);
+      const data = await downloadAdminReport();
+
+      if (!data) {
+        throw new Error("No data received from server");
+      }
+
+      const filename = `report_${format(new Date(), "yyyy-MM-dd")}.csv`;
+      const fileUri = (FileSystem.documentDirectory || "") + filename;
+
+      await FileSystem.writeAsStringAsync(fileUri, data, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(fileUri);
+      } else {
+        AlertService.toast({
+          message: "Sharing is not available on this device",
+          type: "error",
+        });
+      }
+    } catch (error: any) {
+      console.error("Download Error:", error);
+      AlertService.error(error, "Download failed");
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
@@ -137,9 +175,24 @@ export default function HomeScreen({ navigation }: any) {
           <Text style={styles.userName}>{user?.displayName || "Employee"}</Text>
           <Text style={styles.userEmail}>{user?.email || "Employee"}</Text>
         </View>
-        <TouchableOpacity style={styles.profileButton} onPress={handleLogout}>
-          <UserIcon size={24} color={colors.primary} />
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          {user?.role !== "EMPLOYEE" && (
+            <TouchableOpacity
+              style={styles.headerButton}
+              onPress={handleDownloadReport}
+              disabled={isDownloading}
+            >
+              {isDownloading ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Download size={24} color={colors.primary} />
+              )}
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={styles.headerButton} onPress={handleLogout}>
+            <UserIcon size={24} color={colors.primary} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView
@@ -374,7 +427,11 @@ const styles = StyleSheet.create({
     fontWeight: "400",
     color: colors.text.muted,
   },
-  profileButton: {
+  headerButtons: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  headerButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
