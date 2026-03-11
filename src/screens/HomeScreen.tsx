@@ -31,6 +31,7 @@ import {
   Users,
   Briefcase,
   Monitor,
+  LogOut,
 } from "lucide-react-native";
 import { getMyLeaves, getMySummary } from "../api/leaveApi";
 import { getAdminStats, downloadAdminReport } from "../api/adminApi";
@@ -190,7 +191,8 @@ export default function HomeScreen({ navigation }: any) {
             </TouchableOpacity>
           )}
           <TouchableOpacity style={styles.headerButton} onPress={handleLogout}>
-            <UserIcon size={24} color={colors.primary} />
+            <LogOut size={24} color={colors.primary} />
+            <Text style={styles.headerButtonText}>Logout</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -536,6 +538,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "600",
     marginRight: 4,
+  },
+  headerButtonText: {
+    fontSize: 8,
+    fontWeight: "500",
   },
   fab: {
     position: "absolute",

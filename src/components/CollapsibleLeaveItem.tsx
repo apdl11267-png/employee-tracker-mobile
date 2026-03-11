@@ -18,8 +18,10 @@ import {
   Check,
   X,
   Info,
+  Bold,
 } from "lucide-react-native";
 import { colors } from "../theme/colors";
+import { LeaveApplication } from "../api/leaveApi";
 
 if (
   Platform.OS === "android" &&
@@ -43,22 +45,6 @@ interface Employee {
   displayName: string;
   email: string;
   department: string;
-}
-
-interface LeaveApplication {
-  _id: string;
-  applicationId: string;
-  status: string;
-  requestType: string;
-  employee: Employee;
-  leaveDetails: {
-    category: string;
-    totalDaysRequested: number;
-    paidDaysCount: number;
-    unpaidDaysCount: number;
-  };
-  timeline: TimelineItem[];
-  createdAt: string;
 }
 
 interface Props {
@@ -186,7 +172,7 @@ export const CollapsibleLeaveItem: React.FC<Props> = ({
                   {format(parseISO(day.dateIso), "EEE, MMM dd")}
                 </Text>
                 <Text style={styles.timelineReasonText}>
-                  {day.reasonCode || "No reason specified"}
+                  {day.requestType || "No reason specified"}
                 </Text>
               </View>
               <View style={styles.timelineConfig}>
@@ -271,6 +257,24 @@ export const CollapsibleLeaveItem: React.FC<Props> = ({
                   )}
                 </TouchableOpacity>
               </View>
+            </View>
+          )}
+
+          {(item.status === "approved" || item.status === "rejected") && (
+            <View>
+              <Text
+                style={{
+                  margin: 10,
+                  marginBottom: 0,
+                  fontWeight: "bold",
+                }}
+              >
+                Message from approver:
+              </Text>
+              <Text style={styles.adminMessage}>
+                {" "}
+                {item.approvalWorkflow.history[0].message}
+              </Text>
             </View>
           )}
 
@@ -499,5 +503,8 @@ const styles = StyleSheet.create({
     marginTop: 16,
     minHeight: 80,
     textAlignVertical: "top",
+  },
+  adminMessage: {
+    padding: 10,
   },
 });

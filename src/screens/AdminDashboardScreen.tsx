@@ -172,8 +172,8 @@ export default function AdminDashboardScreen({ navigation }: any) {
         <ActivityIndicator style={{ flex: 1 }} color={colors.primary} />
       ) : (
         <FlatList
-          data={leaves}
           keyExtractor={(item) => item._id}
+          data={leaves}
           renderItem={renderItem}
           contentContainerStyle={styles.listContainer}
           refreshControl={

@@ -18,9 +18,8 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
-  LogOut,
+  ChevronLeft,
 } from "lucide-react-native";
-import { useAuth } from "../context/AuthContext";
 
 const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
@@ -50,13 +49,12 @@ const getStatusIcon = (status: string) => {
 };
 
 export default function LeaveHistoryScreen({ navigation }: any) {
-  const { signOut } = useAuth();
   const { data, isLoading, refetch, isRefetching } = useQuery({
     queryKey: ["myLeaves"],
     queryFn: () => getMyLeaves(),
   });
 
-  const leaveApplications = data?.data?.leaveDetails || [];
+  const leaveApplications = data?.data || [];
 
   const renderItem = ({ item }: { item: any }) => {
     const firstDate = item.timeline?.[0]?.dateIso;
@@ -113,15 +111,14 @@ export default function LeaveHistoryScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>My Leaves</Text>
-          <Text style={styles.headerSubtitle}>
-            View your leave status and history
-          </Text>
-        </View>
-        <TouchableOpacity style={styles.logoutButton} onPress={signOut}>
-          <LogOut size={20} color={colors.neutral.base} />
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
+          <ChevronLeft size={28} color={colors.primary} />
         </TouchableOpacity>
+        <Text style={styles.headerTitle}>Leave History</Text>
+        <View style={{ width: 28 }} />
       </View>
 
       {isLoading ? (
@@ -174,13 +171,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8FAFC",
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
-    backgroundColor: "#fff",
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
+    backgroundColor: "#fff",
     borderBottomWidth: 1,
     borderBottomColor: "#E2E8F0",
   },
@@ -194,8 +191,8 @@ const styles = StyleSheet.create({
     color: colors.neutral.base,
     marginTop: 2,
   },
-  logoutButton: {
-    padding: 8,
+  backButton: {
+    padding: 4,
   },
   loadingContainer: {
     flex: 1,
