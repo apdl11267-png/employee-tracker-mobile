@@ -294,6 +294,7 @@ export default function HomeScreen({ navigation }: any) {
                   navigation.navigate("EmployeeList", {
                     filterTitle: "On Leave Today",
                     employees: adminStats?.leavesToday,
+                    readOnly: true,
                   })
                 }
               />
@@ -306,6 +307,7 @@ export default function HomeScreen({ navigation }: any) {
                   navigation.navigate("EmployeeList", {
                     filterTitle: "On WFH Today",
                     employees: adminStats?.wfhToday,
+                    readOnly: true,
                   })
                 }
               />

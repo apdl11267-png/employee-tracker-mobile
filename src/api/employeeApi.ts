@@ -24,8 +24,19 @@ export interface UpdateEmployeePayload {
 }
 
 export const employeeApi = {
-    getAllEmployees: async (): Promise<EmployeeData[]> => {
-        const response = await apiClient.get('/auth/employees');
+    getAllEmployees: async (employeeIds?: string, homeReadOnlyBool?: boolean): Promise<EmployeeData[]> => {
+        console.log({
+            employeeIds,
+            homeReadOnlyBool
+        })
+        if (employeeIds && homeReadOnlyBool) {
+            const response = await apiClient.get(`/auth/employees?_ids=${employeeIds}`);
+            return response.data.data;
+        }
+        if (!employeeIds && homeReadOnlyBool) {
+            return [];
+        }
+        const response = await apiClient.get(`/auth/employees`);
         return response.data.data;
     },
 
