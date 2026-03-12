@@ -106,6 +106,12 @@ export const getMyLeaves = async (startDate?: string, endDate?: string) => {
     return response.data;
 };
 
+export const getPeersLeaves = async (startDate: string, endDate: string) => {
+    const params = { startDate, endDate };
+    const response = await apiClient.get<LeaveResponse>('/leaves/peers', { params });
+    return response.data;
+};
+
 export const getMySummary = async (startDate?: string, endDate?: string) => {
     const params = { startDate, endDate };
     const response = await apiClient.get<{ success: boolean; data: { summary: LeaveSummary } }>('/leaves/my/summary', { params });

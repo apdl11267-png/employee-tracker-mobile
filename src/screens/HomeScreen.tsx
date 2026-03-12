@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -11,13 +11,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useQuery } from "@tanstack/react-query";
-import {
-  format,
-  startOfMonth,
-  endOfMonth,
-  addMonths,
-  parseISO,
-} from "date-fns";
+import { format, addDays, parseISO } from "date-fns";
 import {
   Calendar,
   Clock,
@@ -27,13 +21,12 @@ import {
   ChevronRight,
   User as UserIcon,
   Shield,
-  Settings,
   Users,
   Briefcase,
   Monitor,
   LogOut,
 } from "lucide-react-native";
-import { getMyLeaves, getMySummary } from "../api/leaveApi";
+import { getPeersLeaves, getMySummary } from "../api/leaveApi";
 import { getAdminStats, downloadAdminReport } from "../api/adminApi";
 import { useAuth } from "../context/AuthContext";
 import { colors } from "../theme/colors";
@@ -42,6 +35,25 @@ import * as FileSystem from "expo-file-system/legacy";
 import * as Sharing from "expo-sharing";
 import { Download } from "lucide-react-native";
 import { AlertService } from "../components/AlertService";
+
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+type DateWindow = "today" | "3d" | "7d" | "30d" | "60d";
+
+interface DateWindowOption {
+  key: DateWindow;
+  label: string;
+  days: number;
+}
+
+const DATE_WINDOWS: DateWindowOption[] = [
+  { key: "today", label: "Today", days: 0 },
+  { key: "7d", label: "7 Days", days: 7 },
+  { key: "30d", label: "30 Days", days: 30 },
+  { key: "60d", label: "60 Days", days: 60 },
+];
+
+// ─── Sub-components ──────────────────────────────────────────────────────────
 
 const StatCard = ({ label, value, icon: Icon, color, onPress }: any) => (
   <TouchableOpacity
@@ -60,9 +72,22 @@ const StatCard = ({ label, value, icon: Icon, color, onPress }: any) => (
   </TouchableOpacity>
 );
 
+// ─── Screen ──────────────────────────────────────────────────────────────────
+
 export default function HomeScreen({ navigation }: any) {
   const { user, signOut } = useAuth();
   const [isDownloading, setIsDownloading] = useState(false);
+  const [selectedWindow, setSelectedWindow] = useState<DateWindow>("7d");
+
+  // Compute date range from selected window
+  const { startDate, endDate } = useMemo(() => {
+    const today = new Date();
+    const start = format(today, "yyyy-MM-dd");
+    const windowDays =
+      DATE_WINDOWS.find((w) => w.key === selectedWindow)?.days ?? 7;
+    const end = format(addDays(today, windowDays), "yyyy-MM-dd");
+    return { startDate: start, endDate: end };
+  }, [selectedWindow]);
 
   const handleDownloadReport = async () => {
     try {
@@ -107,25 +132,30 @@ export default function HomeScreen({ navigation }: any) {
     ]);
   };
 
-  const startDate = format(startOfMonth(new Date()), "yyyy-MM-dd");
-  const endDate = format(endOfMonth(addMonths(new Date(), 1)), "yyyy-MM-dd");
-
-  const { data, isLoading, refetch, isRefetching } = useQuery({
-    queryKey: ["leaves", startDate, endDate],
-    queryFn: () => getMyLeaves(startDate, endDate),
+  // ── Peers leaves query ──────────────────────────────────────────────────
+  const {
+    data: peersData,
+    isLoading: peersLoading,
+    refetch: peersRefetch,
+    isRefetching: peersIsRefetching,
+  } = useQuery({
+    queryKey: ["peersLeaves", startDate, endDate],
+    queryFn: () => getPeersLeaves(startDate, endDate),
   });
 
+  // ── My summary (employee only) ──────────────────────────────────────────
   const {
     data: summaryData,
     isLoading: summaryLoading,
     refetch: summaryRefetch,
     isRefetching: summaryIsRefetching,
   } = useQuery({
-    queryKey: ["summary", startDate, endDate],
-    queryFn: () => getMySummary(startDate, endDate),
+    queryKey: ["summary"],
+    queryFn: () => getMySummary(),
     enabled: user?.role === "EMPLOYEE",
   });
 
+  // ── Admin stats ─────────────────────────────────────────────────────────
   const {
     data: adminStatsData,
     isLoading: adminStatsLoading,
@@ -139,7 +169,7 @@ export default function HomeScreen({ navigation }: any) {
 
   const summary = summaryData?.data?.summary;
   const adminStats = adminStatsData?.data;
-  const recentLeaves = data?.data?.slice(0, 5) || [];
+  const peersLeaves = peersData?.data ?? [];
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -157,14 +187,21 @@ export default function HomeScreen({ navigation }: any) {
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
       case "approved":
-        return <CheckCircle2 size={16} color={colors.status.approved} />;
+        return <CheckCircle2 size={14} color={colors.status.approved} />;
       case "rejected":
-        return <XCircle size={16} color={colors.status.rejected} />;
+        return <XCircle size={14} color={colors.status.rejected} />;
       case "cancelled":
-        return <XCircle size={16} color={colors.neutral.base} />;
+        return <XCircle size={14} color={colors.neutral.base} />;
       default:
-        return <Clock size={16} color={colors.status.pending} />;
+        return <Clock size={14} color={colors.status.pending} />;
     }
+  };
+
+  const windowTitle = () => {
+    const opt = DATE_WINDOWS.find((w) => w.key === selectedWindow);
+    if (!opt) return "Upcoming";
+    if (opt.days === 0) return "Today";
+    return `Next ${opt.label}`;
   };
 
   return (
@@ -203,19 +240,20 @@ export default function HomeScreen({ navigation }: any) {
         refreshControl={
           <RefreshControl
             refreshing={
-              isRefetching &&
+              peersIsRefetching ||
               (user?.role === "EMPLOYEE"
                 ? summaryIsRefetching
                 : adminStatsIsRefetching)
             }
             onRefresh={() => {
-              refetch();
+              peersRefetch();
               if (user?.role === "EMPLOYEE") summaryRefetch();
               else adminStatsRefetch();
             }}
           />
         }
       >
+        {/* ── Stats Grid ── */}
         <View style={styles.statsGrid}>
           {user?.role === "EMPLOYEE" ? (
             <>
@@ -232,7 +270,7 @@ export default function HomeScreen({ navigation }: any) {
                 color={colors.status.pending}
               />
               <StatCard
-                label="Taken Today"
+                label="Taken"
                 value={summary?.totalLeavesTaken ?? "-"}
                 icon={CheckCircle2}
                 color={colors.status.approved}
@@ -302,17 +340,27 @@ export default function HomeScreen({ navigation }: any) {
           )}
         </View>
 
+        {/* ── Admin Panel shortcuts ── */}
         {user?.role !== "EMPLOYEE" && (
           <View style={styles.adminSection}>
             <Text style={styles.sectionTitle}>Admin Panel</Text>
             <View style={styles.adminGrid}>
-              <TouchableOpacity
-                style={styles.adminCard}
-                onPress={() => navigation.navigate("AdminDashboard")}
-              >
-                <Shield size={24} color={colors.primary} />
-                <Text style={styles.adminCardText}>Manage Leaves/WFH</Text>
-              </TouchableOpacity>
+              <View style={[styles.adminCard, styles.badgeContainer]}>
+                <TouchableOpacity
+                  style={styles.adminCardInner}
+                  onPress={() => navigation.navigate("AdminDashboard")}
+                >
+                  <Shield size={24} color={colors.primary} />
+                  <Text style={styles.adminCardText}>Manage Leaves/WFH</Text>
+                </TouchableOpacity>
+                {(adminStats?.statsMonth?.pending ?? 0) > 0 && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>
+                      {adminStats!.statsMonth!.pending}
+                    </Text>
+                  </View>
+                )}
+              </View>
               <TouchableOpacity
                 style={styles.adminCard}
                 onPress={() => navigation.navigate("EmployeeList")}
@@ -331,62 +379,112 @@ export default function HomeScreen({ navigation }: any) {
           </View>
         )}
 
+        {/* ── Peers Upcoming Leaves ── */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>
-            Leave/WFH ({format(new Date(), "MMMM")}-
-            {format(addMonths(new Date(), 1), "MMMM")})
-          </Text>
-          <TouchableOpacity onPress={() => navigation.navigate("LeaveHistory")}>
-            <Text style={styles.seeAll}>See All</Text>
-          </TouchableOpacity>
+          <View>
+            <Text style={styles.sectionTitle}>Peers' Upcoming Leaves</Text>
+            <Text style={styles.sectionSubtitle}>{windowTitle()}</Text>
+          </View>
         </View>
 
-        {isLoading ? (
-          <Text style={styles.loadingText}>Loading requests...</Text>
-        ) : recentLeaves.length > 0 ? (
-          recentLeaves.map((leave) => {
+        {/* Date window selector */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.pillRow}
+          contentContainerStyle={styles.pillContent}
+        >
+          {DATE_WINDOWS.map((opt) => {
+            const active = selectedWindow === opt.key;
+            return (
+              <TouchableOpacity
+                key={opt.key}
+                style={[styles.pill, active && styles.pillActive]}
+                onPress={() => setSelectedWindow(opt.key)}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[styles.pillText, active && styles.pillTextActive]}
+                >
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        {/* Peers list */}
+        {peersLoading ? (
+          <ActivityIndicator
+            style={{ marginTop: 32 }}
+            color={colors.secondary}
+          />
+        ) : peersLeaves.length > 0 ? (
+          peersLeaves.map((leave: any) => {
             const firstDate = leave.timeline?.[0]?.dateIso;
             const lastDate =
               leave.timeline?.[leave.timeline.length - 1]?.dateIso;
             const dateRange =
               leave.timeline.length > 1
-                ? `${format(parseISO(firstDate), "MMM dd")} - ${format(parseISO(lastDate), "MMM dd")}`
+                ? `${format(parseISO(firstDate), "MMM dd")} – ${format(
+                    parseISO(lastDate),
+                    "MMM dd",
+                  )}`
                 : format(parseISO(firstDate), "MMM dd, yyyy");
 
+            const statusColor = getStatusColor(leave.status);
+
             return (
-              <TouchableOpacity
-                key={leave._id}
-                style={styles.leaveItem}
-                onPress={() =>
-                  navigation.navigate("LeaveDetails", { id: leave._id })
-                }
-              >
-                <View style={styles.leaveInfo}>
-                  <Text style={styles.leaveDate}>{dateRange}</Text>
-                  <Text style={styles.leaveType}>
-                    {leave.leaveDetails.category} •{" "}
-                    {leave.leaveDetails.totalDaysRequested} Days
-                  </Text>
+              <View key={leave._id} style={styles.peerCard}>
+                {/* Avatar + name */}
+                <View style={styles.peerLeft}>
+                  <View style={styles.peerAvatar}>
+                    <UserIcon size={16} color={colors.primary} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.peerName} numberOfLines={1}>
+                      {leave.employee?.displayName ?? "Unknown"}
+                    </Text>
+                    <Text style={styles.peerEmail} numberOfLines={1}>
+                      {leave.employee?.email ?? "Unknown"}
+                    </Text>
+                    <Text style={styles.peerDept} numberOfLines={1}>
+                      {leave.employee?.department ?? ""}
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.statusBadge}>
-                  {getStatusIcon(leave.status)}
-                  <Text
-                    style={[
-                      styles.statusText,
-                      { color: getStatusColor(leave.status) },
-                    ]}
-                  >
-                    {leave.status.charAt(0).toUpperCase() +
-                      leave.status.slice(1)}
-                  </Text>
-                  <ChevronRight size={16} color={colors.neutral.base} />
+
+                {/* Date + meta */}
+                <View style={styles.peerRight}>
+                  <Text style={styles.peerDate}>{dateRange}</Text>
+                  <View style={styles.peerMeta}>
+                    <Text style={styles.peerType}>
+                      {leave.leaveDetails?.category ??
+                        leave.requestType?.toUpperCase()}{" "}
+                      · {leave.leaveDetails?.totalDaysRequested}d
+                    </Text>
+                    <View
+                      style={[
+                        styles.statusPill,
+                        { backgroundColor: `${statusColor}18` },
+                      ]}
+                    >
+                      {getStatusIcon(leave.status)}
+                      <Text style={[styles.statusText, { color: statusColor }]}>
+                        {leave.status.charAt(0).toUpperCase() +
+                          leave.status.slice(1)}
+                      </Text>
+                    </View>
+                  </View>
                 </View>
-              </TouchableOpacity>
+              </View>
             );
           })
         ) : (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No data for this/next month</Text>
+            <Text style={styles.emptyText}>
+              No upcoming leaves from peers in this window 🎉
+            </Text>
           </View>
         )}
       </ScrollView>
@@ -446,10 +544,15 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 2,
   },
+  headerButtonText: {
+    fontSize: 8,
+    fontWeight: "500",
+  },
   scrollContent: {
     padding: 20,
-    paddingBottom: 100,
+    paddingBottom: 110,
   },
+  // ── Stats ──
   statsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -486,103 +589,7 @@ const styles = StyleSheet.create({
     color: colors.text.muted,
     marginTop: 2,
   },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: colors.text.main,
-  },
-  seeAll: {
-    fontSize: 14,
-    color: colors.secondary,
-    fontWeight: "600",
-  },
-  leaveItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    padding: 16,
-    borderRadius: 16,
-    marginBottom: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 5,
-    elevation: 1,
-  },
-  leaveInfo: {
-    flex: 1,
-  },
-  leaveDate: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: colors.text.main,
-  },
-  leaveType: {
-    fontSize: 13,
-    color: colors.text.muted,
-    marginTop: 2,
-  },
-  statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  statusText: {
-    fontSize: 13,
-    fontWeight: "600",
-    marginRight: 4,
-  },
-  headerButtonText: {
-    fontSize: 8,
-    fontWeight: "500",
-  },
-  fab: {
-    position: "absolute",
-    bottom: 30,
-    right: 20,
-    backgroundColor: colors.primary,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 30,
-    shadowColor: colors.primary,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  fabText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 16,
-    marginLeft: 8,
-  },
-  loadingText: {
-    textAlign: "center",
-    color: colors.text.muted,
-    marginTop: 20,
-  },
-  emptyState: {
-    padding: 40,
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    borderStyle: "dashed",
-    borderWidth: 1,
-    borderColor: colors.neutral.base,
-  },
-  emptyText: {
-    color: colors.text.muted,
-    fontSize: 14,
-  },
+  // ── Admin ──
   adminSection: {
     marginBottom: 24,
   },
@@ -609,5 +616,196 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: colors.text.main,
     textAlign: "center",
+  },
+  badgeContainer: {
+    position: "relative",
+    flex: 1,
+  },
+  adminCardInner: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    width: "100%",
+  },
+  badge: {
+    position: "absolute",
+    top: -6,
+    right: -6,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.status.rejected,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 4,
+    zIndex: 10,
+    borderWidth: 2,
+    borderColor: colors.neutral.light,
+  },
+  badgeText: {
+    color: "#fff",
+    fontSize: 10,
+    fontWeight: "800",
+  },
+  // ── Section header ──
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.text.main,
+  },
+  sectionSubtitle: {
+    fontSize: 12,
+    color: colors.text.muted,
+    marginTop: 2,
+  },
+  // ── Date window pills ──
+  pillRow: {
+    marginBottom: 16,
+  },
+  pillContent: {
+    gap: 8,
+    paddingRight: 4,
+  },
+  pill: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: "#fff",
+    borderWidth: 1.5,
+    borderColor: colors.neutral.base,
+  },
+  pillActive: {
+    backgroundColor: colors.secondary,
+    borderColor: colors.secondary,
+  },
+  pillText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: colors.text.muted,
+  },
+  pillTextActive: {
+    color: "#fff",
+  },
+  // ── Peer card ──
+  peerCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 6,
+    elevation: 2,
+    gap: 12,
+  },
+  peerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    flex: 1,
+    minWidth: 0,
+  },
+  peerAvatar: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: `${colors.secondary}18`,
+    justifyContent: "center",
+    alignItems: "center",
+    flexShrink: 0,
+  },
+  peerName: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.text.main,
+  },
+  peerEmail: {
+    fontSize: 12,
+    color: colors.text.muted,
+    marginTop: 1,
+  },
+  peerDept: {
+    fontSize: 11,
+    color: colors.text.muted,
+    marginTop: 1,
+  },
+  peerRight: {
+    alignItems: "flex-end",
+    flexShrink: 0,
+  },
+  peerDate: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.primary,
+    marginBottom: 4,
+  },
+  peerMeta: {
+    alignItems: "flex-end",
+    gap: 4,
+  },
+  peerType: {
+    fontSize: 11,
+    color: colors.text.muted,
+  },
+  statusPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  statusText: {
+    fontSize: 10,
+    fontWeight: "700",
+  },
+  // ── Empty state ──
+  emptyState: {
+    padding: 40,
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    borderStyle: "dashed",
+    borderWidth: 1,
+    borderColor: colors.neutral.base,
+  },
+  emptyText: {
+    color: colors.text.muted,
+    fontSize: 14,
+    textAlign: "center",
+  },
+  // ── FAB ──
+  fab: {
+    position: "absolute",
+    bottom: 30,
+    right: 20,
+    backgroundColor: colors.primary,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 30,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  fabText: {
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 16,
+    marginLeft: 8,
   },
 });
