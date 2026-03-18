@@ -94,3 +94,13 @@ export const registerFirstAdmin = async (payload: any) => {
         throw error;
     }
 };
+
+export const updateFCMToken = async (fcmToken: string) => {
+    try {
+        const response = await apiClient.patch('/auth/update-fcm-token', { fcmToken });
+        return response.data;
+    } catch (error) {
+        console.error("Update FCM token error:", error);
+        throw error;
+    }
+};
