@@ -95,8 +95,55 @@ export default function HomeScreen({ navigation }: any) {
         queryClient.invalidateQueries({ queryKey: ["unreadChatCount"] });
       });
 
+      // ── Notification System implementation ──
+
+      // 1. For Admin: New leave request
+      socket.on("new_leave_request_targeted", (data) => {
+        if (data.roles.includes(user?.role)) {
+          AlertService.toast({
+            message: `New ${data.requestType} requested by ${data.employeeName}`,
+            type: "info",
+            timeout: 4000
+          });
+          queryClient.invalidateQueries({ queryKey: ["adminStats"] });
+        }
+      });
+
+      // 2. For Employee: Leave approved/rejected
+      socket.on(`leave_status_update_${user?.id}`, (data) => {
+        const type = data.status === 'approved' ? 'success' : 'error';
+        AlertService.toast({
+          message: `Your ${data.requestType} request was ${data.status}${data.message ? ': ' + data.message : ''}`,
+          type,
+          timeout: 5000
+        });
+        queryClient.invalidateQueries({ queryKey: ["summary"] });
+        queryClient.invalidateQueries({ queryKey: ["myLeaves"] });
+      });
+
+      // 3. For Peers: When someone's leave is approved
+      socket.on("peer_leave_approved", (data) => {
+        // Don't toast for self (handled by status update)
+        if (data.employeeId !== user?.id) {
+          // Just refresh the peer feed, maybe not toast every single one to avoid spam
+          // but if we want "wow", a subtle toast helps.
+          queryClient.invalidateQueries({ queryKey: ["peersLeaves"] });
+        }
+      });
+
+      // 4. Admin: Leave cancelled (refresh stats)
+      socket.on("leave_cancelled_targeted", (data) => {
+        if (data.roles.includes(user?.role)) {
+          queryClient.invalidateQueries({ queryKey: ["adminStats"] });
+        }
+      });
+
       return () => {
         socket.off("new_message");
+        socket.off("new_leave_request_targeted");
+        socket.off(`leave_status_update_${user?.id}`);
+        socket.off("peer_leave_approved");
+        socket.off("leave_cancelled_targeted");
       };
     }
   }, [socket, queryClient]);
@@ -347,6 +394,19 @@ export default function HomeScreen({ navigation }: any) {
                 }
               />
               <StatCard
+                label="WDH Today"
+                value={adminStats?.wdhToday?.length ?? "-"}
+                icon={Briefcase}
+                color={colors.secondary}
+                onPress={() =>
+                  navigation.navigate("EmployeeList", {
+                    filterTitle: "On WDH Today",
+                    employees: adminStats?.wdhToday,
+                    readOnly: true,
+                  })
+                }
+              />
+              <StatCard
                 label="Pending"
                 value={adminStats?.statsMonth?.pending ?? "-"}
                 icon={Clock}
@@ -540,7 +600,7 @@ export default function HomeScreen({ navigation }: any) {
         onPress={() => navigation.navigate("ApplyLeave")}
       >
         <Plus color="#fff" size={24} />
-        <Text style={styles.fabText}>Apply Leave/WFH</Text>
+        <Text style={styles.fabText}>New Request</Text>
       </TouchableOpacity>
     </SafeAreaView>
   );

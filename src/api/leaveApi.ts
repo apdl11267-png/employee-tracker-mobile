@@ -29,7 +29,7 @@ export interface LeaveSummary {
 }
 
 export type Status = 'pending' | 'approved' | 'rejected';
-export type RequestType = 'leave' | 'wfh';
+export type RequestType = 'leave' | 'wfh' | 'wdh';
 export type DayType = 'full' | 'half';
 
 export interface Employee {

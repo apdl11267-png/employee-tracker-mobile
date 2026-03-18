@@ -4,6 +4,7 @@ export interface AdminStats {
     totalEmployees: number;
     leavesToday: any[];
     wfhToday: any[];
+    wdhToday: any[];
     statsMonth: {
         pending: number;
         approved: number;
