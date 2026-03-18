@@ -22,10 +22,11 @@ import {
   ChevronLeft,
   Home,
   Calendar as CalendarIcon,
+  Briefcase,
 } from "lucide-react-native";
 import { useAuth } from "../context/AuthContext";
 
-type RequestType = "leave" | "wfh";
+type RequestType = "leave" | "wfh" | "wdh";
 
 export default function LeaveApplicationScreen({ navigation }: any) {
   const queryClient = useQueryClient();
@@ -68,7 +69,7 @@ export default function LeaveApplicationScreen({ navigation }: any) {
       queryClient.invalidateQueries({ queryKey: ["summary"] });
       AlertService.success(
         "Success",
-        `${requestType === "wfh" ? "WFH" : "Leave"} application submitted successfully.`,
+        `${requestType === "wfh" ? "WFH" : requestType === "wdh" ? "WDH" : "Leave"} application submitted successfully.`,
       );
       navigation.goBack();
     },
@@ -131,19 +132,24 @@ export default function LeaveApplicationScreen({ navigation }: any) {
       employeeId: user?.id,
       requestType,
       leaveDetails: {
-        category: requestType === "wfh" ? "WFH" : "Leave",
+        category:
+          requestType === "wdh"
+            ? "WDH"
+            : requestType === "wfh"
+              ? "WFH"
+              : "Leave",
         totalDaysRequested: finalTimeline.reduce(
           (acc, curr) => acc + curr.deductionValue,
           0,
         ),
         paidDaysCount:
-          requestType === "wfh"
+          requestType === "wfh" || requestType === "wdh"
             ? 0
             : finalTimeline
                 .filter((d) => d.isPaid)
                 .reduce((acc, curr) => acc + curr.deductionValue, 0),
         unpaidDaysCount:
-          requestType === "wfh"
+          requestType === "wfh" || requestType === "wdh"
             ? 0
             : finalTimeline
                 .filter((d) => !d.isPaid)
@@ -227,6 +233,26 @@ export default function LeaveApplicationScreen({ navigation }: any) {
             WFH
           </Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.typeButton,
+            requestType === "wdh" && styles.typeButtonActive,
+          ]}
+          onPress={() => setRequestType("wdh")}
+        >
+          <Briefcase
+            size={20}
+            color={requestType === "wdh" ? "#fff" : colors.primary}
+          />
+          <Text
+            style={[
+              styles.typeButtonText,
+              requestType === "wdh" && styles.typeButtonTextActive,
+            ]}
+          >
+            WDH
+          </Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView
@@ -277,7 +303,12 @@ export default function LeaveApplicationScreen({ navigation }: any) {
               <ActivityIndicator color={colors.text.inverse} />
             ) : (
               <Text style={styles.submitButtonText}>
-                Configure {requestType === "wfh" ? "WFH" : "Leave"}
+                Configure{" "}
+                {requestType === "wfh"
+                  ? "WFH"
+                  : requestType === "wdh"
+                    ? "WDH"
+                    : "Leave"}
               </Text>
             )}
           </TouchableOpacity>

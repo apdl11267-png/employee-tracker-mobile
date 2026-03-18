@@ -44,7 +44,7 @@ export interface DateConfig {
 interface DateConfigSheetProps {
   submitBtnRef: React.RefObject<any>;
   selectedDatesMap: Record<string, DateConfig>;
-  requestType: "leave" | "wfh";
+  requestType: "leave" | "wfh" | "wdh";
   onSave: (configs: Record<string, DateConfig>) => void;
   onSubmit: (finalTimeline: DateConfig[]) => void;
   onRemove: (dateIso: string) => void;
@@ -71,6 +71,13 @@ const WFH_CATEGORIES = [
   { label: "Personal Work", value: "Personal Work" },
   { label: "Commute Issue", value: "Commute Issue" },
   { label: "Not Well", value: "Not Well" },
+  { label: "Other", value: "Other" },
+];
+
+const WDH_CATEGORIES = [
+  { label: "Holiday Shift", value: "Holiday Shift" },
+  { label: "Weekend Cover", value: "Weekend Cover" },
+  { label: "Extra Hours", value: "Extra Hours" },
   { label: "Other", value: "Other" },
 ];
 
@@ -150,7 +157,11 @@ export const DateConfigSheet = forwardRef<
     );
 
     const categories =
-      requestType === "leave" ? LEAVE_CATEGORIES : WFH_CATEGORIES;
+      requestType === "leave"
+        ? LEAVE_CATEGORIES
+        : requestType === "wdh"
+          ? WDH_CATEGORIES
+          : WFH_CATEGORIES;
 
     return (
       <BottomSheetModal

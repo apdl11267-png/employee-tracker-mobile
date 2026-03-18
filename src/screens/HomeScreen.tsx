@@ -25,9 +25,11 @@ import {
   Briefcase,
   Monitor,
   LogOut,
+  MessageCircle,
 } from "lucide-react-native";
 import { getPeersLeaves, getMySummary } from "../api/leaveApi";
 import { getAdminStats, downloadAdminReport } from "../api/adminApi";
+import { useUnreadChatCount } from "../api/chatApi";
 import { useAuth } from "../context/AuthContext";
 import { colors } from "../theme/colors";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -78,6 +80,9 @@ export default function HomeScreen({ navigation }: any) {
   const { user, signOut } = useAuth();
   const [isDownloading, setIsDownloading] = useState(false);
   const [selectedWindow, setSelectedWindow] = useState<DateWindow>("7d");
+
+  const { data: unreadData } = useUnreadChatCount();
+  const unreadCount = unreadData?.unreadCount ?? 0;
 
   // Compute date range from selected window
   const { startDate, endDate } = useMemo(() => {
@@ -214,6 +219,19 @@ export default function HomeScreen({ navigation }: any) {
           <Text style={styles.userEmail}>{user?.email || "Employee"}</Text>
         </View>
         <View style={styles.headerButtons}>
+          <TouchableOpacity
+            style={styles.headerButton}
+            onPress={() => navigation.navigate("Chat")}
+          >
+            <MessageCircle size={24} color={colors.primary} />
+            {unreadCount > 0 && (
+              <View style={styles.chatBadge}>
+                <Text style={styles.badgeText}>
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </Text>
+              </View>
+            )}
+          </TouchableOpacity>
           {user?.role !== "EMPLOYEE" && (
             <TouchableOpacity
               style={styles.headerButton}
@@ -437,7 +455,14 @@ export default function HomeScreen({ navigation }: any) {
             const statusColor = getStatusColor(leave.status);
 
             return (
-              <View key={leave._id} style={styles.peerCard}>
+              <TouchableOpacity
+                key={leave._id}
+                style={styles.peerCard}
+                onPress={() =>
+                  navigation.navigate("LeaveDetails", { id: leave._id })
+                }
+                activeOpacity={0.7}
+              >
                 {/* Avatar + name */}
                 <View style={styles.peerLeft}>
                   <View style={styles.peerAvatar}>
@@ -450,8 +475,10 @@ export default function HomeScreen({ navigation }: any) {
                     <Text style={styles.peerEmail} numberOfLines={1}>
                       {leave.employee?.email ?? "Unknown"}
                     </Text>
-                    <Text style={styles.peerDept} numberOfLines={1}>
-                      {leave.employee?.department ?? ""}
+                    <Text style={styles.peerDept} numberOfLines={2}>
+                      {leave.timeline?.[0]?.comment ||
+                        leave.timeline?.[0]?.reasonCode ||
+                        "No reason specified"}
                     </Text>
                   </View>
                 </View>
@@ -479,7 +506,7 @@ export default function HomeScreen({ navigation }: any) {
                     </View>
                   </View>
                 </View>
-              </View>
+              </TouchableOpacity>
             );
           })
         ) : (
@@ -649,6 +676,21 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 10,
     fontWeight: "800",
+  },
+  chatBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: colors.status.rejected,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 4,
+    zIndex: 10,
+    borderWidth: 2,
+    borderColor: "#fff",
   },
   // ── Section header ──
   sectionHeader: {

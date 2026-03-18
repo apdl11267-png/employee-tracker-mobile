@@ -38,6 +38,7 @@ const FindOrganizationScreen = ({ navigation }: any) => {
         name: tenantData.name,
         slug: tenantData.slug,
         themeConfig: tenantData.themeConfig,
+        statsResetDate: new Date(), // Fallback or retrieve from API if available
       });
 
       // Navigation will be handled by the navigator based on context state
