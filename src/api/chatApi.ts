@@ -47,7 +47,7 @@ export const useChatMessages = () => {
     return useQuery<ChatMessage[]>({
         queryKey: ['chatMessages'],
         queryFn: getChatMessages,
-        refetchInterval: 5000, // Poll every 5 seconds while on screen
+        refetchInterval: 30000, // Reduced polling frequency, socket is primary
     });
 };
 
@@ -66,7 +66,7 @@ export const useUnreadChatCount = () => {
     return useQuery({
         queryKey: ['unreadChatCount'],
         queryFn: getUnreadChatCount,
-        refetchInterval: 15000, // Poll every 15 seconds globally
+        refetchInterval: 60000, // Reduced polling frequency
     });
 };
 

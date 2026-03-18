@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
   RefreshControl,
   ActivityIndicator,
 } from "react-native";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { format, addDays, parseISO } from "date-fns";
 import {
   Calendar,
@@ -31,6 +31,7 @@ import { getPeersLeaves, getMySummary } from "../api/leaveApi";
 import { getAdminStats, downloadAdminReport } from "../api/adminApi";
 import { useUnreadChatCount } from "../api/chatApi";
 import { useAuth } from "../context/AuthContext";
+import { useSocket } from "../context/SocketContext";
 import { colors } from "../theme/colors";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as FileSystem from "expo-file-system/legacy";
@@ -78,11 +79,27 @@ const StatCard = ({ label, value, icon: Icon, color, onPress }: any) => (
 
 export default function HomeScreen({ navigation }: any) {
   const { user, signOut } = useAuth();
+  const { socket } = useSocket();
+  const queryClient = useQueryClient();
   const [isDownloading, setIsDownloading] = useState(false);
   const [selectedWindow, setSelectedWindow] = useState<DateWindow>("7d");
 
   const { data: unreadData } = useUnreadChatCount();
   const unreadCount = unreadData?.unreadCount ?? 0;
+
+  // Socket listener for new messages to update badge
+  useEffect(() => {
+    if (socket) {
+      socket.on("new_message", () => {
+        // Invalidate unread count to trigger a fresh fetch
+        queryClient.invalidateQueries({ queryKey: ["unreadChatCount"] });
+      });
+
+      return () => {
+        socket.off("new_message");
+      };
+    }
+  }, [socket, queryClient]);
 
   // Compute date range from selected window
   const { startDate, endDate } = useMemo(() => {

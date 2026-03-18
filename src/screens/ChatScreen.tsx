@@ -19,17 +19,43 @@ import {
   useMarkChatAsRead,
   ChatMessage,
 } from "../api/chatApi";
+import { useSocket } from "../context/SocketContext";
 import { colors } from "../theme/colors";
 import { format } from "date-fns";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function ChatScreen({ navigation }: any) {
   const { user } = useAuth();
+  const { socket } = useSocket();
+  const queryClient = useQueryClient();
   const [messageText, setMessageText] = useState("");
   const flatListRef = useRef<FlatList>(null);
 
   const { data: messages, isLoading: isMessagesLoading } = useChatMessages();
   const { mutate: sendMessage, isPending: isSending } = useSendChatMessage();
   const { mutate: markAsRead } = useMarkChatAsRead();
+
+  // Socket listener for new messages
+  useEffect(() => {
+    if (socket) {
+      socket.on("new_message", (newMessage: ChatMessage) => {
+        // Manually update the query cache to show message instantly
+        queryClient.setQueryData(
+          ["chatMessages"],
+          (oldData: ChatMessage[] | undefined) => {
+            if (!oldData) return [newMessage];
+            // Check if message already exists (prevent duplicates if API response beat socket)
+            if (oldData.find((m) => m._id === newMessage._id)) return oldData;
+            return [...oldData, newMessage];
+          },
+        );
+      });
+
+      return () => {
+        socket.off("new_message");
+      };
+    }
+  }, [socket, queryClient]);
 
   // Mark as read when entering screen and when new messages arrive
   useEffect(() => {
@@ -81,7 +107,7 @@ export default function ChatScreen({ navigation }: any) {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
@@ -100,7 +126,7 @@ export default function ChatScreen({ navigation }: any) {
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        {isMessagesLoading && (!messages || messages.length === 0) ? (
+        {isMessagesLoading || !(messages && messages.length > 0) ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
@@ -158,7 +184,7 @@ export default function ChatScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
-    </SafeAreaView>
+    </View>
   );
 }
 
