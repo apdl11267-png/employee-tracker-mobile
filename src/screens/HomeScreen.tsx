@@ -103,7 +103,7 @@ export default function HomeScreen({ navigation }: any) {
           AlertService.toast({
             message: `New ${data.requestType} requested by ${data.employeeName}`,
             type: "info",
-            timeout: 4000
+            timeout: 4000,
           });
           queryClient.invalidateQueries({ queryKey: ["adminStats"] });
         }
@@ -111,11 +111,11 @@ export default function HomeScreen({ navigation }: any) {
 
       // 2. For Employee: Leave approved/rejected
       socket.on(`leave_status_update_${user?.id}`, (data) => {
-        const type = data.status === 'approved' ? 'success' : 'error';
+        const type = data.status === "approved" ? "success" : "error";
         AlertService.toast({
-          message: `Your ${data.requestType} request was ${data.status}${data.message ? ': ' + data.message : ''}`,
+          message: `Your ${data.requestType} request was ${data.status}${data.message ? ": " + data.message : ""}`,
           type,
-          timeout: 5000
+          timeout: 5000,
         });
         queryClient.invalidateQueries({ queryKey: ["summary"] });
         queryClient.invalidateQueries({ queryKey: ["myLeaves"] });

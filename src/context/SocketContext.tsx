@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { io, Socket } from "socket.io-client";
 import { useAuth } from "./AuthContext";
 import { useTenant } from "./TenantContext";
-import { Platform } from "react-native";
+import { DB_URL } from "../api/apiClient";
 
 interface SocketContextData {
   socket: Socket | null;
@@ -10,10 +10,6 @@ interface SocketContextData {
 }
 
 const SocketContext = createContext<SocketContextData>({} as SocketContextData);
-
-// Match the logic in apiClient.ts
-const URL = "https://employee-tracker-uxeh.onrender.com";
-// const URL = 'http://192.168.1.78:4001';
 
 export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -25,7 +21,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     if (token && currentTenant?.id) {
-      const newSocket = io(URL, {
+      const newSocket = io(DB_URL, {
         auth: {
           token,
         },

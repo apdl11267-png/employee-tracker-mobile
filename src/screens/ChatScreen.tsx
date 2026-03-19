@@ -126,7 +126,7 @@ export default function ChatScreen({ navigation }: any) {
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
-        {isMessagesLoading || !(messages && messages.length > 0) ? (
+        {isMessagesLoading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={colors.primary} />
           </View>

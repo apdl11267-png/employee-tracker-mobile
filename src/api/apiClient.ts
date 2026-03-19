@@ -5,12 +5,13 @@ import { Platform } from 'react-native';
 import { eventBus } from '../utils/eventBus';
 
 
-const URL = 'https://employee-tracker-uxeh.onrender.com';
-// const URL = 'http://192.168.1.78:4001';
+export const DB_URL = 'https://employee-tracker-uxeh.onrender.com';
+// export const URL = 'http://192.168.1.78:4001';
+// export const DB_URL = 'http://192.168.1.106:4001';
 export const BASE_URL = Platform.select({
-    ios: `${URL}/api/v1`,
-    android: `${URL}/api/v1`,
-    default: `${URL}/api/v1`,
+    ios: `${DB_URL}/api/v1`,
+    android: `${DB_URL}/api/v1`,
+    default: `${DB_URL}/api/v1`,
 });
 
 const apiClient = axios.create({
